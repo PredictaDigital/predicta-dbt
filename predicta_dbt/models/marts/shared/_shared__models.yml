@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: Calendar dimension, one row per day. Reference data shared by every platform.
+    columns:
+      - name: date_day
+        description: The calendar date.
+        data_tests: [not_null, unique]
+
+  - name: dim_tenant
+    description: One row per customer (tenant), with its reporting timezone and plan.
+    columns:
+      - name: tenant_id
+        description: Tenant identifier carried in the JWT claim and on every fact row.
+        data_tests: [not_null, unique, dbt_utils.not_empty_string]
+
+  - name: dim_channel
+    description: Marketing channel groups (Direct, Organic Search, Paid Search, ...) plus Unassigned.
+    columns:
+      - name: channel_key
+        description: Surrogate key of the channel group.
+        data_tests: [not_null, unique]
+      - name: channel_group
+        description: Human-readable channel name used in dashboards.
+        data_tests: [not_null, unique]

@@ -1,0 +1,66 @@
+# Lean local setup for a low-RAM Windows laptop.
+#   docker compose up -d clickhouse          start the database (~2 GB cap)
+#   docker compose build dbt                 build the dbt image
+#   docker compose run --rm dbt build --select tag:shared tag:ga4
+#
+# Prefect is deliberately NOT included yet: validate the SQL and dbt first,
+# then add it. Passwords live in .env (copy .env.example), never in Git.
+name: predicta-local
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.3
+    container_name: predicta-clickhouse
+    mem_limit: 2g
+    ports:
+      - "8123:8123"        # HTTP (dbt and curl)
+    environment:
+      CLICKHOUSE_USER: admin
+      CLICKHOUSE_PASSWORD: ${CH_ADMIN_PASSWORD}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"    # lets the init script CREATE USER
+      DBT_PASSWORD: ${CH_DBT_PASSWORD}
+      CUBE_PASSWORD: ${CH_CUBE_PASSWORD}
+      LOAD_SAMPLE_DATA: ${LOAD_SAMPLE_DATA:-true}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}       # S3 API endpoint (not the console URL)
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    volumes:
+      - ch_data:/var/lib/clickhouse
+      - ./clickhouse:/sql:ro
+      - ./clickhouse/docker-init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+      - ./clickhouse/config.d/low-memory.xml:/etc/clickhouse-server/config.d/low-memory.xml:ro
+    ulimits:
+      nofile: {soft: 262144, hard: 262144}
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --user admin --password \"$$CLICKHOUSE_PASSWORD\" -q 'select 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  dbt:
+    build: .
+    image: predicta/dbt-runner:local
+    profiles: ["tools"]            # only runs when you ask: docker compose run --rm dbt ...
+    mem_limit: 1g
+    working_dir: /app/predicta_dbt
+    entrypoint: ["dbt"]
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    environment:
+      DBT_TARGET: dev
+      CH_HOST: clickhouse
+      CH_PORT: "8123"
+      CH_SECURE: "False"
+      CH_DBT_USER: dbt_user
+      CH_DBT_PASSWORD: ${CH_DBT_PASSWORD}
+    volumes:             # edit models on Windows, no rebuild needed
+      - ./predicta_dbt/models:/app/predicta_dbt/models
+      - ./predicta_dbt/macros:/app/predicta_dbt/macros
+      - ./predicta_dbt/seeds:/app/predicta_dbt/seeds
+      - ./predicta_dbt/tests:/app/predicta_dbt/tests
+      - ./predicta_dbt/dbt_project.yml:/app/predicta_dbt/dbt_project.yml
+
+volumes:
+  ch_data:

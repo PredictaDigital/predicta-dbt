@@ -1,0 +1,48 @@
+name: predicta_dbt
+version: "0.1.0"
+config-version: 2
+profile: predicta
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # ---- DECISION REQUIRED, set once for every platform -------------------
+  # Timezone used to turn event timestamps into reporting dates.
+  # 'UTC' is the safe PoC default. If you later go tenant-local, change the
+  # to_reporting_date() macro only; nothing else should hard-code a timezone.
+  reporting_timezone: "UTC"
+  # -----------------------------------------------------------------------
+  incremental_lookback_days: 3        # late-arriving / reprocessed data window
+  date_spine_start: "2015-01-01"
+  date_spine_end: "2035-12-31"
+  apply_row_policies: false           # see macros/apply_tenant_row_policy.sql
+
+seeds:
+  predicta_dbt:
+    +schema: marts
+    +tags: ["shared"]
+
+models:
+  predicta_dbt:
+    +on_schema_change: fail           # fail loudly rather than silently drift
+    staging:
+      +schema: staging
+      +materialized: view             # PoC default; see README for incremental
+      ga4:
+        +tags: ["ga4"]
+      ga4_reports:
+        +tags: ["ga4_reports"]
+    marts:
+      +schema: marts
+      shared:
+        +materialized: table
+        +tags: ["shared"]
+      ga4:
+        +tags: ["ga4"]
+      ga4_reports:
+        +tags: ["ga4_reports"]

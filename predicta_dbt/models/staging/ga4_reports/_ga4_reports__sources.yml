@@ -1,0 +1,67 @@
+version: 2
+
+sources:
+  - name: raw_ga4_lc
+    description: >
+      Airbyte GA4 report streams for Little Cheeks, landed from MinIO by
+      clickhouse/04_minio_load.sh. One row per Airbyte record; the payload is the
+      JSON string in _airbyte_data. The same date appears in several syncs
+      (rolling windows), so staging keeps only the latest sync per natural key.
+    schema: raw
+    tables:
+      - name: ga4_lc_website_overview
+        description: Daily site totals (users, sessions, page views).
+        loaded_at_field: _loaded_at
+        config:
+          freshness:
+            warn_after: {count: 48, period: hour}
+            error_after: {count: 96, period: hour}
+      - name: ga4_lc_daily_active_users
+        description: Daily active users.
+        loaded_at_field: _loaded_at
+        config:
+          freshness:
+            warn_after: {count: 48, period: hour}
+            error_after: {count: 96, period: hour}
+      - name: ga4_lc_traffic_sources
+        description: Daily traffic by session source and medium.
+        loaded_at_field: _loaded_at
+        config:
+          freshness:
+            warn_after: {count: 48, period: hour}
+            error_after: {count: 96, period: hour}
+      - name: ga4_lc_traffic_acquisition_session_source_medium_report
+        description: Daily engagement and revenue by session source and medium.
+        loaded_at_field: _loaded_at
+        config:
+          freshness:
+            warn_after: {count: 48, period: hour}
+            error_after: {count: 96, period: hour}
+      - name: ga4_lc_pages
+        description: Daily page views by host and page path.
+        loaded_at_field: _loaded_at
+        config:
+          freshness:
+            warn_after: {count: 48, period: hour}
+            error_after: {count: 96, period: hour}
+      - name: ga4_lc_devices
+        description: Daily traffic by device category, operating system and browser.
+        loaded_at_field: _loaded_at
+        config:
+          freshness:
+            warn_after: {count: 48, period: hour}
+            error_after: {count: 96, period: hour}
+      - name: ga4_lc_locations
+        description: Daily traffic by country, region and city.
+        loaded_at_field: _loaded_at
+        config:
+          freshness:
+            warn_after: {count: 48, period: hour}
+            error_after: {count: 96, period: hour}
+      - name: ga4_lc_ecommerce_purchases_item_name_report
+        description: Daily ecommerce funnel metrics per item name.
+        loaded_at_field: _loaded_at
+        config:
+          freshness:
+            warn_after: {count: 48, period: hour}
+            error_after: {count: 96, period: hour}

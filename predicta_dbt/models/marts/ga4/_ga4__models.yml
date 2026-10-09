@@ -1,0 +1,116 @@
+version: 2
+
+models:
+  - name: dim_page
+    description: One row per tenant and page path visited.
+    columns:
+      - name: page_key
+        description: Surrogate key of tenant and page path.
+        data_tests: [not_null, unique]
+      - name: tenant_id
+        description: Owning tenant.
+        data_tests: [not_null, dbt_utils.not_empty_string]
+      - name: page_path
+        description: URL path without host or query string, e.g. /pricing.
+
+  - name: dim_device
+    description: Device categories (desktop, mobile, tablet, unknown). Same for every tenant.
+    columns:
+      - name: device_key
+        description: Surrogate key of the device category.
+        data_tests: [not_null, unique]
+      - name: device_category
+        description: Device type shown in dashboards.
+
+  - name: fact_events
+    description: >
+      One row per GA4 event. Use for event-level questions such as which pages
+      get the most views or how many purchases happened per day.
+    columns:
+      - name: event_key
+        description: Unique id of the event.
+        data_tests: [not_null, unique]
+      - name: tenant_id
+        description: Owning tenant. Tenant filter column.
+        data_tests: [not_null, dbt_utils.not_empty_string]
+      - name: session_key
+        description: Session this event belongs to.
+        data_tests: [not_null]
+      - name: event_date
+        description: Reporting date of the event (timezone set by var reporting_timezone).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: page_key
+        description: Page the event happened on.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_page')
+                field: page_key
+      - name: device_key
+        description: Device the event came from.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_device')
+                field: device_key
+      - name: channel_key
+        description: Marketing channel group the event is attributed to.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_channel')
+                field: channel_key
+      - name: engagement_time_msec
+        description: Milliseconds of engaged time recorded on the event.
+      - name: event_count
+        description: Always 1; sum it to count events.
+
+  - name: fact_sessions
+    description: >
+      One row per GA4 session. Use for traffic and engagement questions such as
+      sessions by channel, engagement rate, or purchases per session.
+    columns:
+      - name: session_key
+        description: Unique id of the session.
+        data_tests: [not_null, unique]
+      - name: tenant_id
+        description: Owning tenant. Tenant filter column.
+        data_tests: [not_null, dbt_utils.not_empty_string]
+      - name: session_date
+        description: Reporting date the session started (timezone set by var reporting_timezone).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: landing_page_key
+        description: First page of the session.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_page')
+                field: page_key
+      - name: device_key
+        description: Device the session started on.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_device')
+                field: device_key
+      - name: channel_key
+        description: Marketing channel group of the session's first touch.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_channel')
+                field: channel_key
+      - name: session_count
+        description: Always 1; sum it to count sessions.
+      - name: is_engaged_session
+        description: 1 if the session lasted over 10 s, had a purchase, or had 2+ page views.

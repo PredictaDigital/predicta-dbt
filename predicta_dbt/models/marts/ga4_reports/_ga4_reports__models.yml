@@ -1,0 +1,165 @@
+version: 2
+
+models:
+  - name: dim_location
+    description: "Country, region and city. Same for every tenant."
+    columns:
+      - name: location_key
+        data_tests: [not_null, unique]
+  - name: dim_item
+    description: "One row per tenant and ecommerce item name."
+    columns:
+      - name: item_key
+        data_tests: [not_null, unique]
+      - name: tenant_id
+        data_tests: [not_null, dbt_utils.not_empty_string]
+  - name: fact_site_daily
+    description: "One row per tenant and date: site totals plus daily active users. Loaded incrementally from the Airbyte GA4 reports."
+    columns:
+      - name: site_daily_key
+        data_tests: [not_null, unique]
+      - name: tenant_id
+        description: Owning tenant. Tenant filter column.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_tenant')
+                field: tenant_id
+      - name: date_day
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+  - name: fact_traffic_daily
+    description: "One row per tenant, date, source and medium: traffic, engagement and revenue. Loaded incrementally from the Airbyte GA4 reports."
+    columns:
+      - name: traffic_daily_key
+        data_tests: [not_null, unique]
+      - name: tenant_id
+        description: Owning tenant. Tenant filter column.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_tenant')
+                field: tenant_id
+      - name: date_day
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: channel_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_channel')
+                field: channel_key
+  - name: fact_page_daily
+    description: "One row per tenant, date and page path: page views and bounce rate. Loaded incrementally from the Airbyte GA4 reports."
+    columns:
+      - name: page_daily_key
+        data_tests: [not_null, unique]
+      - name: tenant_id
+        description: Owning tenant. Tenant filter column.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_tenant')
+                field: tenant_id
+      - name: date_day
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: page_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_page')
+                field: page_key
+  - name: fact_device_daily
+    description: "One row per tenant, date, device category, OS and browser. Loaded incrementally from the Airbyte GA4 reports."
+    columns:
+      - name: device_daily_key
+        data_tests: [not_null, unique]
+      - name: tenant_id
+        description: Owning tenant. Tenant filter column.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_tenant')
+                field: tenant_id
+      - name: date_day
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: device_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_device')
+                field: device_key
+  - name: fact_location_daily
+    description: "One row per tenant, date, country, region and city. Loaded incrementally from the Airbyte GA4 reports."
+    columns:
+      - name: location_daily_key
+        data_tests: [not_null, unique]
+      - name: tenant_id
+        description: Owning tenant. Tenant filter column.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_tenant')
+                field: tenant_id
+      - name: date_day
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: location_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_location')
+                field: location_key
+  - name: fact_item_daily
+    description: "One row per tenant, date and item: ecommerce funnel and revenue. Loaded incrementally from the Airbyte GA4 reports."
+    columns:
+      - name: item_daily_key
+        data_tests: [not_null, unique]
+      - name: tenant_id
+        description: Owning tenant. Tenant filter column.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_tenant')
+                field: tenant_id
+      - name: date_day
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
+      - name: item_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_item')
+                field: item_key

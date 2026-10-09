@@ -1,0 +1,30 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Raw landing tables in ClickHouse, loaded from MinIO/S3 by Prefect using
+      plain INSERT ... SELECT FROM s3(). dbt never reads S3 directly.
+    schema: raw                       # ClickHouse database
+    tables:
+      - name: raw_ga4_events
+        description: >
+          One row per GA4 event as landed from the connector. ASSUMED SHAPE:
+          verify against `DESCRIBE TABLE raw.raw_ga4_events` and a real sample
+          before trusting any column below.
+        loaded_at_field: _loaded_at
+        config:
+          freshness:
+            warn_after: {count: 26, period: hour}    # matches the v2 freshness target
+            error_after: {count: 48, period: hour}
+        columns:
+          - name: tenant_id
+            description: Owning tenant. Tagged at load time; must never be null.
+          - name: _loaded_at
+            description: When the row landed in ClickHouse (watermark for incrementals).
+
+      - name: tenants
+        description: >
+          Small tenant metadata table, synced from the app PostgreSQL by Prefect
+          (or exposed with ClickHouse's PostgreSQL engine). Analytics data never
+          lives in PostgreSQL; this is tenant reference data only.

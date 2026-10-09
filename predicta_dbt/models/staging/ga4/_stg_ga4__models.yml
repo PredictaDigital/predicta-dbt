@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: stg_ga4__events
+    description: >
+      Cleaned GA4 events, one row per event, deduplicated on event_key keeping
+      the most recently loaded copy. Source for fact_events and fact_sessions.
+    columns:
+      - name: event_key
+        description: Surrogate key of tenant, user, session, event name and timestamp.
+        data_tests: [not_null, unique]
+      - name: session_key
+        description: Surrogate key of tenant, user and GA session id.
+        data_tests: [not_null]
+      - name: tenant_id
+        description: Owning tenant. Every downstream model filters and secures on this.
+        data_tests: [not_null, dbt_utils.not_empty_string]
+      - name: event_ts
+        description: When the event happened (UTC). Convert to a reporting date only via to_reporting_date().
+        data_tests: [not_null]
+      - name: source
+        description: Traffic source, lower-cased; '(direct)' when GA4 reports none.
+      - name: medium
+        description: Traffic medium, lower-cased; '(none)' when GA4 reports none.
+      - name: engagement_time_msec
+        description: Milliseconds the page was in focus for this event.
+      - name: _loaded_at
+        description: When the row landed in ClickHouse. Incremental watermark.

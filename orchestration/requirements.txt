@@ -1,0 +1,6 @@
+# Versions below are the ones the skeleton was actually tested with.
+# Bump deliberately, re-run the e2e checks, and review dbt-clickhouse release
+# notes first (incremental strategies have changed between releases).
+dbt-core==1.12.5
+dbt-clickhouse==1.10.3
+prefect==3.8.8

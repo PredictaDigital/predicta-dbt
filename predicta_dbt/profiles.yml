@@ -1,0 +1,37 @@
+# Credentials come from environment variables only (injected from OpenBao by
+# External Secrets Operator). Nothing secret is committed.
+predicta:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:                              # single-node ClickHouse, no Keeper
+      type: clickhouse
+      schema: staging                 # must be a database dbt_user already owns (adapter checks it)
+      host: "{{ env_var('CH_HOST') }}"
+      port: "{{ env_var('CH_PORT', '8123') | as_number }}"
+      user: "{{ env_var('CH_DBT_USER') }}"
+      password: "{{ env_var('CH_DBT_PASSWORD') }}"
+      secure: "{{ env_var('CH_SECURE', 'False') | as_bool }}"
+      threads: 2                      # dbt competes with dashboard queries; keep low
+      connect_timeout: 10
+      send_receive_timeout: 900
+      custom_settings:
+        join_use_nulls: 1             # LEFT JOIN returns NULL, not '' / 0, for misses
+        max_threads: 4                # per-query CPU cap (also set on dbt_user profile)
+
+    prod:                             # UNTESTED: 2 shards x 2 replicas
+      type: clickhouse
+      schema: staging
+      host: "{{ env_var('CH_HOST') }}"
+      port: "{{ env_var('CH_PORT', '8123') | as_number }}"
+      user: "{{ env_var('CH_DBT_USER') }}"
+      password: "{{ env_var('CH_DBT_PASSWORD') }}"
+      secure: "{{ env_var('CH_SECURE', 'True') | as_bool }}"
+      threads: 4
+      connect_timeout: 10
+      send_receive_timeout: 1800
+      # Cluster mode needs replicated engines and a decision on distributed
+      # tables. Read the dbt-clickhouse cluster docs and test before using.
+      cluster: "{{ env_var('CH_CLUSTER', 'predicta') }}"
+      custom_settings:
+        join_use_nulls: 1
+        max_threads: 8

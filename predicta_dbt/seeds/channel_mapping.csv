@@ -1,0 +1,15 @@
+source,medium,channel_group
+(direct),(none),Direct
+google,organic,Organic Search
+bing,organic,Organic Search
+google,cpc,Paid Search
+bing,cpc,Paid Search
+facebook,social,Organic Social
+instagram,social,Organic Social
+linkedin,social,Organic Social
+facebook,paid_social,Paid Social
+email,email,Email
+yandex,organic,Organic Search
+facebook.com,feed,Organic Social
+l.facebook.com,referral,Organic Social
+chatgpt.com,ai-assistant,AI Assistant

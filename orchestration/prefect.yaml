@@ -1,0 +1,53 @@
+# Deploy from the repo root:  prefect deploy --all
+# Code lives in the image, so there is no git clone / build / push step.
+name: predicta-dbt
+prefect-version: 3.8.8
+
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /app
+
+definitions:
+  work_pool: &k8s_pool
+    name: predicta-k8s              # created from k8s/work-pool-template.json
+    job_variables: &job_vars
+      image: registry.example.com/predicta/dbt-runner:0.1.0   # CHANGE ME
+      image_pull_policy: IfNotPresent
+      namespace: predicta-pipeline
+      service_account_name: dbt-runner
+      cpu_request: "1"
+      memory_request: 2Gi
+      memory_limit: 4Gi
+      env:
+        DBT_TARGET: dev
+        CH_HOST: clickhouse-predicta.clickhouse.svc.cluster.local   # CHANGE ME
+        CH_PORT: "8123"
+        CH_SECURE: "False"            # capitalised: dbt's as_bool rejects lower-case
+        # CH_DBT_USER / CH_DBT_PASSWORD come from the Secret via envFrom
+        # (see k8s/external-secret-dbt.yaml and the work-pool template).
+
+deployments:
+  # Shared dimensions: small, once a day, before any platform build.
+  - name: dbt-shared-daily
+    entrypoint: orchestration/flows/dbt_transform.py:refresh_shared
+    work_pool: *k8s_pool
+    schedules:
+      - cron: "0 3 * * *"
+        timezone: "UTC"
+
+  # One deployment per platform. PoC: it also rebuilds shared dims (default).
+  # At scale: set include_shared to false and rely on dbt-shared-daily.
+  - name: dbt-ga4
+    entrypoint: orchestration/flows/dbt_transform.py:transform_platform
+    parameters:
+      platform: ga4
+      include_shared: true
+    work_pool: *k8s_pool
+    schedules:
+      # Run after the nightly sync window. Adjust to when loads finish.
+      - cron: "30 3 * * *"
+        timezone: "UTC"
+    # Event-driven alternative to the cron schedule: start dbt when the load
+    # flow completes. Not used yet, and the trigger syntax is unverified here.
+    # Check the Prefect "deployment triggers" docs before enabling, and debounce
+    # it: a per-tenant load flow would otherwise fire hundreds of dbt runs.

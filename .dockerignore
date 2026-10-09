@@ -1,0 +1,4 @@
+predicta_dbt/target
+predicta_dbt/logs
+predicta_dbt/dbt_packages
+**/__pycache__

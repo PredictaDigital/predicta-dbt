@@ -1,0 +1,14 @@
+version: 2
+
+seeds:
+  - name: ga4_property_tenant
+    description: Maps a GA4 property_id (from the Airbyte report tables) to our tenant_id.
+    config:
+      column_types:
+        property_id: String
+        tenant_id: String
+    columns:
+      - name: property_id
+        data_tests: [not_null, unique]
+      - name: tenant_id
+        data_tests: [not_null]
