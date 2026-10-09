@@ -1,0 +1,153 @@
+name: Poc Predicta-dbt
+
+on:
+  push:
+    branches: ["poc"]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for manual deploy"
+        required: false
+        default: "manual trigger"
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  test:
+    runs-on: predicta-dbt-poc
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint
+        run: make lint
+
+      - name: Run tests
+        run: make test-ci
+
+  build-and-push:
+    runs-on: predicta-dbt-poc
+    environment: poc
+    needs: test
+
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image_tag: ${{ steps.extract_tag.outputs.image }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=poc-latest
+            type=sha,prefix=poc-,format=short
+
+      - name: Extract SHA image tag
+        id: extract_tag
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        shell: bash
+        run: |
+          IMAGE=$(printf '%s\n' "$TAGS" |
+            grep -E ':poc-[a-f0-9]{7}$' |
+            head -n 1)
+
+          if [ -z "$IMAGE" ]; then
+            echo "ERROR: Could not extract SHA image tag"
+            exit 1
+          fi
+
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "Selected image: $IMAGE"
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    runs-on: [self-hosted, predicta-dbt-poc]
+    environment: poc
+    needs: build-and-push
+
+    steps:
+      - name: Configure kubectl
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$HOME/.kube"
+          chmod 700 "$HOME/.kube"
+
+          printf '%s' "$KUBE_CONFIG" > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+          echo "KUBECONFIG=$HOME/.kube/config" >> "$GITHUB_ENV"
+
+          kubectl config current-context
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Deploy dbt to Kubernetes
+        env:
+          IMAGE: ${{ needs.build-and-push.outputs.image_tag }}
+          REASON: ${{ inputs.reason || github.event.head_commit.message || 'manual trigger' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Deployment reason: $REASON"
+          echo "Deploying image: $IMAGE"
+
+          if [ -z "$IMAGE" ]; then
+            echo "ERROR: Image tag is empty"
+            exit 1
+          fi
+
+          kubectl set image \
+            -n transformation \
+            deployment/predicta_dbt \
+            predicta-dbt="$IMAGE"
+
+          kubectl rollout status \
+            -n transformation \
+            deployment/predicta_dbt \
+
+
+
+            
+            --timeout=300s
+```
