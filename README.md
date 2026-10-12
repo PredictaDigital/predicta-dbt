@@ -67,3 +67,5 @@ data. The raw GA4 columns are an ASSUMPTION; see below.
 - Row-policy second layer: needs a design (Cube uses one ClickHouse user).
 - Staging is a view with `limit 1 by` dedupe. It sorts the full table; switch
   to an incremental staging table once raw volume makes builds slow.
+
+  ### Testing
