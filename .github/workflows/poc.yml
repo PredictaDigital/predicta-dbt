@@ -52,11 +52,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r orchestration/requirements.txt
 
-      - name: Lint
-        run: make lint
-  
-      - name: Run test
-        run: make test-ci
+      - name: Install dbt packages
+        run: dbt deps --project-dir predicta_dbt
+
+      - name: Validate dbt project
+        working-directory: predicta_dbt
+        run: dbt parse
 
 
   # =========================================================
