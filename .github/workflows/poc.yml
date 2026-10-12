@@ -57,8 +57,13 @@ jobs:
 
       - name: Validate dbt project
         working-directory: predicta_dbt
+        env:
+          CH_HOST: ${{ secrets.CH_HOST }}
+          CH_PORT: ${{ secrets.CH_PORT }}
+          CH_DBT_USER: ${{ secrets.CH_DBT_USER }}
+          CH_DBT_PASSWORD: ${{ secrets.CH_DBT_PASSWORD }}
+          CH_SECURE: ${{ secrets.CH_SECURE }}
         run: dbt parse
-
 
   # =========================================================
   # 2. BUILD AND PUSH DBT IMAGE TO GHCR
