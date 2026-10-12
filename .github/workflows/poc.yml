@@ -52,11 +52,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r orchestration/requirements.txt
 
-#      - name: Lint
-#        run: make lint
-
- #     - name: Run tests
-  #      run: make test-ci
+      - name: Lint
+        run: make lint
+  
+      - name: Run test
+        run: make test-ci
 
 
   # =========================================================
