@@ -52,18 +52,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r orchestration/requirements.txt
 
-      - name: Install dbt packages
-        run: dbt deps --project-dir predicta_dbt
-
-      - name: Validate dbt project
-        working-directory: predicta_dbt
-        env:
-          CH_HOST: ${{ secrets.CH_HOST }}
-          CH_PORT: ${{ secrets.CH_PORT }}
-          CH_DBT_USER: ${{ secrets.CH_DBT_USER }}
-          CH_DBT_PASSWORD: ${{ secrets.CH_DBT_PASSWORD }}
-          CH_SECURE: ${{ secrets.CH_SECURE }}
-        run: dbt parse
+      - name: Lint
+        run: make lint
+      - name: Lint
+        run: make lint
 
   # =========================================================
   # 2. BUILD AND PUSH DBT IMAGE TO GHCR
