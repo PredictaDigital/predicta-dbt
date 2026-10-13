@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEO Performance Dashboard</title>
+<style>
+/* Tokens: validated reference palette (see dataviz skill). Light and dark are separate selections. */
+.viz-root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --s1: #2a78d6; --s2: #eb6834;
+  --good: #0ca30c; --good-text: #006300; --warn: #fab219; --serious: #ec835a; --bad: #d03b3b; --bad-text: #a82a2a;
+  --wash: rgba(11,11,11,0.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .viz-root {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s2: #d95926; --good-text: #0ca30c; --bad-text: #e66767; --wash: rgba(255,255,255,0.06);
+  }
+}
+:root[data-theme="dark"] .viz-root {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s2: #d95926; --good-text: #0ca30c; --bad-text: #e66767; --wash: rgba(255,255,255,0.06);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 48px; }
+h1 { font-size: 22px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+h2 { font-size: 13px; margin: 28px 0 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink2); font-weight: 650; }
+h3 { font-size: 15px; margin: 0; font-weight: 620; }
+p { margin: 0; }
+.top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; }
+.sub { color: var(--ink2); margin-top: 4px; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-top: 14px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.seg { display: inline-flex; background: var(--wash); border-radius: 9px; padding: 2px; }
+.seg button { border: 0; background: transparent; color: var(--ink2); padding: 6px 12px; border-radius: 7px; font: inherit; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--border); font-weight: 600; }
+.chip { font-size: 12px; color: var(--ink2); background: var(--wash); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+select, .ghost { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+.ghost { font-size: 12px; padding: 4px 10px; color: var(--ink2); }
+.ghost:hover, select:hover, .seg button:hover { background: var(--wash); }
+:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.spacer { flex: 1; }
+.grid { display: grid; gap: 14px; }
+.kgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; min-width: 0; }
+.card > header { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
+.card > header p { color: var(--ink2); font-size: 12px; margin-top: 2px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(138px, 1fr)); gap: 10px 14px; }
+.tile { padding: 4px 0; min-width: 0; }
+.tile .l { color: var(--ink2); font-size: 12px; }
+.tile .v { font-size: 28px; font-weight: 640; letter-spacing: -0.02em; line-height: 1.15; margin-top: 2px; }
+.tile .v small { font-size: 13px; font-weight: 500; color: var(--ink2); margin-left: 2px; }
+.d { font-size: 12px; margin-top: 2px; display: inline-flex; gap: 4px; align-items: baseline; flex-wrap: wrap; }
+.d.good { color: var(--good-text); } .d.bad { color: var(--bad-text); } .d.flat { color: var(--ink2); }
+.d i { font-style: normal; color: var(--muted); }
+.src { display: inline-block; font-size: 11px; color: var(--ink2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 7px; margin-left: 8px; font-weight: 500; vertical-align: 2px; }
+.body { position: relative; min-width: 0; }
+svg text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+.hbar { display: grid; grid-template-columns: minmax(70px, 34%) 1fr auto; gap: 10px; align-items: center; padding: 5px 0; }
+.hbar .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.hbar .track { height: 10px; background: transparent; position: relative; }
+.hbar .fill { height: 10px; border-radius: 0 4px 4px 0; background: var(--s1); min-width: 2px; }
+.hbar .val { font-variant-numeric: tabular-nums; color: var(--ink2); min-width: 56px; text-align: right; }
+table.t { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.t th { text-align: left; font-weight: 600; color: var(--ink2); font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--axis); white-space: nowrap; }
+.t td { padding: 6px 8px; border-bottom: 1px solid var(--grid); vertical-align: middle; }
+.t .r { text-align: right; }
+.t td.name { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: normal; }
+.t tr:last-child td { border-bottom: 0; }
+.t .mini { display: inline-block; height: 6px; border-radius: 0 3px 3px 0; background: var(--s1); vertical-align: middle; margin-right: 8px; }
+.scroll { overflow-x: auto; }
+.legend { display: flex; gap: 14px; margin: 0 0 8px; color: var(--ink2); font-size: 12px; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+.grp { padding: 6px 0 8px; }
+.grp .name { margin-bottom: 3px; }
+.grp .hbar { padding: 2px 0; grid-template-columns: 62px 1fr auto; }
+.status { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; white-space: nowrap; }
+.status b { font-weight: 700; }
+.s-good b { color: var(--good); } .s-ok b { color: var(--warn); } .s-bad b { color: var(--bad); }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--axis); border-radius: 8px; padding: 6px 9px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); white-space: nowrap; z-index: 5; transform: translate(-50%, -100%); }
+.tip .k { color: var(--ink2); }
+.hl { margin: 0; padding-left: 18px; color: var(--ink); }
+.hl li { margin: 3px 0; }
+.note { color: var(--ink2); font-size: 12.5px; }
+.note li { margin: 4px 0; }
+.empty { color: var(--muted); padding: 24px 0; text-align: center; }
+@media (max-width: 1000px) { .kgrid, .g3 { grid-template-columns: 1fr; } .g2 { grid-template-columns: 1fr; } }
+@media (forced-colors: active) { .hbar .fill, .t .mini { background: Highlight; } }
+</style>
+</head>
+<body class="viz-root">
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>SEO performance</h1>
+      <p class="sub" id="sub"></p>
+    </div>
+  </div>
+
+  <div class="bar" role="group" aria-label="Filters">
+    <div class="seg" id="range" role="group" aria-label="Date range"></div>
+    <span class="chip" id="cov-ga4"></span>
+    <span class="chip" id="cov-gsc"></span>
+    <span class="chip" id="cov-cmp"></span>
+    <span class="spacer"></span>
+    <label class="note" for="theme">Theme&nbsp;
+      <select id="theme"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select>
+    </label>
+  </div>
+
+  <h2>Headline numbers</h2>
+  <div class="grid kgrid" id="kpis"></div>
+
+  <h2>Highlights</h2>
+  <div class="card"><ul class="hl" id="highlights"></ul></div>
+
+  <h2>Trends</h2>
+  <div class="grid g3" id="trends"></div>
+
+  <h2>Website traffic (GA4)</h2>
+  <div class="grid g2" id="traffic"></div>
+
+  <h2>Google Search (Search Console)</h2>
+  <div class="grid g2" id="search"></div>
+
+  <h2>Page speed and quality (Lighthouse)</h2>
+  <div class="grid g2" id="lh"></div>
+
+  <h2>How to read this</h2>
+  <div class="card"><ul class="note hl" id="notes"></ul></div>
+  <p class="note" style="margin-top:14px" id="foot"></p>
+</div>
+
+<script>
+const D = /*__DATA__*/null;
+
+/* ---------- helpers ---------- */
+const $ = (s, e = document) => e.querySelector(s);
+const NF = new Intl.NumberFormat("en-US");
+const n0 = v => NF.format(Math.round(v));
+const n1 = v => (Math.round(v * 10) / 10).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const pct = (v, d = 1) => (v * 100).toFixed(d) + "%";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const dur = s => { s = Math.round(s); return Math.floor(s / 60) + "m " + String(s % 60).padStart(2, "0") + "s"; };
+const dshort = iso => { const d = new Date(iso + "T00:00:00Z"); return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }); };
+const path = u => { try { const p = new URL(u); return (p.pathname === "/" ? "/ (home)" : p.pathname) + (p.host !== "predictaanalytics.io" ? "  · " + p.host : ""); } catch (e) { return u; } };
+const store = { get(k, d) { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+let RANGE = store.get("sl_range", "14d"); if (!D.ranges[RANGE]) RANGE = "14d";
+const VIEW = {};          // card id -> showing table view
+const CARDS = {};         // card id -> definition
+
+/* ---------- deltas ---------- */
+// kind: 'rel' relative % change; 'pp' percentage-point change for rates; 'abs' absolute (position)
+function delta(cur, prev, { kind = "rel", upGood = true, label }) {
+  if (prev == null) return "";
+  let diff, txt;
+  if (kind === "pp") { diff = (cur - prev) * 100; txt = (diff >= 0 ? "+" : "") + diff.toFixed(1) + " pp"; }
+  else if (kind === "abs") { diff = cur - prev; txt = (diff >= 0 ? "+" : "") + diff.toFixed(1); }
+  else { if (prev === 0) return `<span class="d flat">no prior data</span>`; diff = (cur - prev) / prev * 100; txt = (diff >= 0 ? "+" : "") + diff.toFixed(1) + "%"; }
+  const flat = Math.abs(diff) < (kind === "rel" ? 0.5 : 0.05);
+  const good = diff > 0 === upGood;
+  const cls = flat ? "flat" : good ? "good" : "bad";
+  const icon = flat ? "■" : diff > 0 ? "▲" : "▼";
+  return `<span class="d ${cls}"><span aria-hidden="true">${icon}</span> ${txt} <i>${label}</i></span>`;
+}
+const tile = (l, v, d) => `<div class="tile"><div class="l">${l}</div><div class="v">${v}</div>${d || ""}</div>`;
+
+/* ---------- Lighthouse thresholds ---------- */
+const scoreStatus = v => v >= 90 ? ["good", "Good", "✓"] : v >= 50 ? ["ok", "Needs work", "▲"] : ["bad", "Poor", "✕"];
+const VITALS = [
+  ["First contentful paint", "lh_avg_fcp_ms", 1800, 3000, v => (v / 1000).toFixed(1) + " s"],
+  ["Speed index", "lh_avg_speed_index_ms", 3400, 5800, v => (v / 1000).toFixed(1) + " s"],
+  ["Largest contentful paint", "lh_avg_lcp_ms", 2500, 4000, v => (v / 1000).toFixed(1) + " s"],
+  ["Time to interactive", "lh_avg_tti_ms", 3800, 7300, v => (v / 1000).toFixed(1) + " s"],
+  ["Total blocking time", "lh_avg_tbt_ms", 200, 600, v => Math.round(v) + " ms"],
+  ["Cumulative layout shift", "lh_avg_cls", 0.1, 0.25, v => v.toFixed(3)],
+];
+const vitalStatus = (v, g, o) => v <= g ? ["good", "Good", "✓"] : v <= o ? ["ok", "Needs work", "▲"] : ["bad", "Poor", "✕"];
+const statusHTML = s => `<span class="status s-${s[0]}"><b aria-hidden="true">${s[2]}</b>${s[1]}</span>`;
+
+/* ---------- generic table + bars ---------- */
+function tableHTML({ cols, rows, empty = "No data in this range" }) {
+  if (!rows.length) return `<div class="empty">${empty}</div>`;
+  return `<div class="scroll"><table class="t"><thead><tr>${cols.map(c => `<th class="${c.r ? "r" : ""}">${esc(c.h)}</th>`).join("")}</tr></thead><tbody>` +
+    rows.map(r => `<tr>${r.map((c, i) => `<td class="${cols[i].r ? "r" : ""} ${cols[i].name ? "name" : ""}" ${cols[i].name ? `title="${esc(String(c).replace(/<[^>]+>/g, ""))}"` : ""}>${c}</td>`).join("")}</tr>`).join("") + `</tbody></table></div>`;
+}
+function hbars(host, rows, { fmt = n0, color = "var(--s1)" } = {}) {
+  if (!rows.length) { host.innerHTML = `<div class="empty">No data in this range</div>`; return; }
+  const max = Math.max(...rows.map(r => r.value), 1);
+  host.innerHTML = rows.map(r => `<div class="hbar" title="${esc(r.label)}: ${esc(fmt(r.value))}"><div class="lab">${esc(r.label)}</div><div class="track"><div class="fill" style="width:${(r.value / max * 100).toFixed(1)}%;background:${color}"></div></div><div class="val">${esc(fmt(r.value))}</div></div>`).join("");
+}
+
+/* ---------- line chart with crosshair tooltip ---------- */
+function eachDay(a, b) { const out = []; for (let d = new Date(a + "T00:00:00Z"); d <= new Date(b + "T00:00:00Z"); d = new Date(d.getTime() + 864e5)) out.push(d.toISOString().slice(0, 10)); return out; }
+function niceMax(v) { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))); const m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
+function lineChart(host, pts, { color = "var(--s1)", label, fmt = n0 }) {
+  host.innerHTML = "";
+  if (!pts.length) { host.innerHTML = `<div class="empty">No data in this range</div>`; return; }
+  const W = Math.max(host.clientWidth, 260), H = 210, m = { l: 42, r: 14, t: 12, b: 26 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const ymax = niceMax(Math.max(...pts.map(p => p.v))), x = i => m.l + (pts.length === 1 ? iw / 2 : i / (pts.length - 1) * iw), y = v => m.t + ih - v / ymax * ih;
+  const ticks = [0, 1, 2, 3, 4].map(i => ymax / 4 * i);
+  const xt = pts.length <= 6 ? pts.map((_, i) => i) : [0, 1, 2, 3, 4].map(k => Math.round(k * (pts.length - 1) / 4));
+  const maxI = pts.reduce((b, p, i) => p.v > pts[b].v ? i : b, 0);
+  const d = pts.map((p, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ");
+  host.style.position = "relative";
+  host.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)} per day, ${dshort(pts[0].d)} to ${dshort(pts.at(-1).d)}, peak ${esc(fmt(pts[maxI].v))} on ${dshort(pts[maxI].d)}" tabindex="0">
+    ${ticks.map(t => `<line x1="${m.l}" x2="${W - m.r}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)" stroke-width="1"/><text x="${m.l - 6}" y="${y(t) + 4}" text-anchor="end">${esc(fmt(t))}</text>`).join("")}
+    <line x1="${m.l}" x2="${W - m.r}" y1="${y(0)}" y2="${y(0)}" stroke="var(--axis)" stroke-width="1"/>
+    ${xt.map(i => `<text x="${x(i)}" y="${H - 8}" text-anchor="${i === 0 ? "start" : i === pts.length - 1 ? "end" : "middle"}">${dshort(pts[i].d)}</text>`).join("")}
+    <path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x(maxI)}" cy="${y(pts[maxI].v)}" r="4" fill="${color}" stroke="var(--surface)" stroke-width="2"/>
+    <text x="${Math.min(Math.max(x(maxI), m.l + 18), W - m.r - 18)}" y="${Math.max(y(pts[maxI].v) - 9, 10)}" text-anchor="middle" style="fill:var(--ink2)">${esc(fmt(pts[maxI].v))}</text>
+    <line id="xh" y1="${m.t}" y2="${y(0)}" stroke="var(--axis)" stroke-width="1" style="display:none"/>
+    <circle id="xd" r="4.5" fill="${color}" stroke="var(--surface)" stroke-width="2" style="display:none"/>
+    <rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" id="hit"/></svg><div class="tip" style="display:none"></div>`;
+  const svg = host.firstElementChild, tip = host.querySelector(".tip"), xh = svg.querySelector("#xh"), xd = svg.querySelector("#xd");
+  const show = i => {
+    i = Math.max(0, Math.min(pts.length - 1, i)); const px = x(i), py = y(pts[i].v);
+    xh.setAttribute("x1", px); xh.setAttribute("x2", px); xh.style.display = ""; xd.setAttribute("cx", px); xd.setAttribute("cy", py); xd.style.display = "";
+    tip.innerHTML = `<span class="k">${dshort(pts[i].d)}</span><br><b>${esc(fmt(pts[i].v))}</b> ${esc(label)}`;
+    tip.style.display = ""; tip.style.left = Math.min(Math.max(px, 60), W - 60) + "px"; tip.style.top = Math.max(py - 8, 36) + "px";
+  };
+  const hide = () => { xh.style.display = xd.style.display = tip.style.display = "none"; };
+  let cur = pts.length - 1;
+  svg.querySelector("#hit").addEventListener("mousemove", e => { const r = svg.getBoundingClientRect(); cur = Math.round((e.clientX - r.left - m.l) / iw * (pts.length - 1)); show(cur); });
+  svg.querySelector("#hit").addEventListener("mouseleave", hide);
+  svg.addEventListener("keydown", e => { if (e.key === "ArrowLeft") { cur--; show(cur); e.preventDefault(); } else if (e.key === "ArrowRight") { cur++; show(cur); e.preventDefault(); } });
+  svg.addEventListener("focus", () => show(cur)); svg.addEventListener("blur", hide);
+}
+function series(map, [a, b], idx) { return eachDay(a, b).map(d => ({ d, v: (map[d] || [])[idx] || 0 })); }
+
+/* ---------- build the page ---------- */
+function section(id, cards) {
+  $("#" + id).innerHTML = cards.map(c => { CARDS[c.id] = c; return cardHTML(c); }).join("");
+}
+function cardHTML(c) {
+  return `<section class="card" id="card-${c.id}" style="${c.span ? "grid-column: span " + c.span : ""}"><header><div><h3>${c.title}${c.src ? `<span class="src">${c.src}</span>` : ""}</h3><p>${c.sub || ""}</p></div>${c.table ? `<button class="ghost" data-toggle="${c.id}" aria-pressed="${!!VIEW[c.id]}">${VIEW[c.id] ? "Chart" : "Table view"}</button>` : ""}</header><div class="body" id="body-${c.id}"></div></section>`;
+}
+function paint(c) {
+  const host = $("#body-" + c.id); if (!host) return;
+  host.style.position = "relative";
+  if (VIEW[c.id] && c.table) host.innerHTML = tableHTML(c.table());
+  else c.draw(host);
+}
+
+function render() {
+  const R = D.ranges[RANGE], label = RANGE === "all" ? "" : "vs prev " + RANGE.replace("d", " days");
+  const ga = R.ga4, gp = R.ga4_prev, gs = R.gsc, sp = R.gsc_prev;
+  const organic = (R.channels.find(c => c.channel_group === "Organic Search") || {}).ga4_sessions || 0;
+  const organicPrev = R.channels_prev ? ((R.channels_prev.find(c => c.channel_group === "Organic Search") || {}).ga4_sessions || 0) : null;
+  const lh = Object.fromEntries(D.lighthouse.map(l => [l.strategy, l]));
+  const fails = s => D.audits.filter(a => a.strategy === s && a.failed > 0).length;
+  const scored = s => D.audits.filter(a => a.strategy === s && a.scored > 0).length;
+
+  $("#sub").textContent = `Predicta Analytics website · snapshot ${D.generated_at} · data from the semantic layer (project ${D.project})`;
+  $("#cov-ga4").textContent = `GA4: ${dshort(R.ga4_window[0])} – ${dshort(R.ga4_window[1])}`;
+  $("#cov-gsc").textContent = `Search Console: ${dshort(R.gsc_window[0])} – ${dshort(R.gsc_window[1])}`;
+  const cmp = RANGE === "all" ? "Whole period, no comparison" : (R.ga4_prev && R.gsc_prev) ? "Changes compare with the previous " + RANGE.replace("d", " days") : "No full earlier period to compare with: pick a shorter range";
+  $("#cov-cmp").textContent = cmp;
+  $("#range").innerHTML = [["7d", "Last 7 days"], ["14d", "Last 14 days"], ["28d", "Last 28 days"], ["all", "All data"]].map(([k, t]) => `<button data-range="${k}" aria-pressed="${k === RANGE}">${t}</button>`).join("");
+
+  /* KPI groups */
+  $("#kpis").innerHTML = `
+  <section class="card"><header><div><h3>Website traffic<span class="src">GA4</span></h3><p>${dshort(R.ga4_window[0])} – ${dshort(R.ga4_window[1])}</p></div></header><div class="tiles">
+    ${tile("Sessions", n0(ga.ga4_sessions), delta(ga.ga4_sessions, gp && gp.ga4_sessions, { label }))}
+    ${tile("Page views", n0(ga.ga4_pageviews), delta(ga.ga4_pageviews, gp && gp.ga4_pageviews, { label }))}
+    ${tile("New users", n0(ga.ga4_new_users), delta(ga.ga4_new_users, gp && gp.ga4_new_users, { label }))}
+    ${tile("Engagement rate", pct(ga.ga4_engagement_rate), delta(ga.ga4_engagement_rate, gp && gp.ga4_engagement_rate, { kind: "pp", label }))}
+    ${tile("Pages per session", n1(ga.ga4_pageviews_per_session), delta(ga.ga4_pageviews_per_session, gp && gp.ga4_pageviews_per_session, { label }))}
+    ${tile("Avg session", dur(ga.ga4_avg_session_duration_sec), delta(ga.ga4_avg_session_duration_sec, gp && gp.ga4_avg_session_duration_sec, { label }))}
+    ${tile("Organic search sessions", n0(organic), delta(organic, organicPrev, { label }))}
+    ${tile("Organic share of sessions", pct(ga.ga4_sessions ? organic / ga.ga4_sessions : 0), "")}
+  </div></section>
+  <section class="card"><header><div><h3>Google Search<span class="src">Search Console</span></h3><p>${dshort(R.gsc_window[0])} – ${dshort(R.gsc_window[1])}, all search types</p></div></header><div class="tiles">
+    ${tile("Clicks", n0(gs.gsc_clicks), delta(gs.gsc_clicks, sp && sp.gsc_clicks, { label }))}
+    ${tile("Impressions", n0(gs.gsc_impressions), delta(gs.gsc_impressions, sp && sp.gsc_impressions, { label }))}
+    ${tile("Click-through rate", pct(gs.gsc_ctr, 2), delta(gs.gsc_ctr, sp && sp.gsc_ctr, { kind: "pp", label }))}
+    ${tile("Average position", n1(gs.gsc_avg_position), delta(gs.gsc_avg_position, sp && sp.gsc_avg_position, { kind: "abs", upGood: false, label }))}
+    ${tile("Distinct queries", n0(R.queries_distinct), "")}
+    ${tile("Pages in search", n0(R.pages_distinct), "")}
+  </div></section>
+  <section class="card"><header><div><h3>Page speed<span class="src">Lighthouse</span></h3><p>Latest run, ${esc(path((D.lighthouse[0] || {}).page_url || ""))}, ${dshort((D.lighthouse[0] || {}).date || D.coverage.ga4[1])}</p></div></header><div class="tiles">
+    ${tile("Performance, mobile", lh.mobile ? Math.round(lh.mobile.lh_avg_performance) : "–", lh.mobile ? statusHTML(scoreStatus(lh.mobile.lh_avg_performance)) : "")}
+    ${tile("Performance, desktop", lh.desktop ? Math.round(lh.desktop.lh_avg_performance) : "–", lh.desktop ? statusHTML(scoreStatus(lh.desktop.lh_avg_performance)) : "")}
+    ${tile("SEO score, mobile", lh.mobile ? Math.round(lh.mobile.lh_avg_seo) : "–", lh.mobile ? statusHTML(scoreStatus(lh.mobile.lh_avg_seo)) : "")}
+    ${tile("Largest paint, mobile", lh.mobile ? (lh.mobile.lh_avg_lcp_ms / 1000).toFixed(1) + "<small>s</small>" : "–", lh.mobile ? statusHTML(vitalStatus(lh.mobile.lh_avg_lcp_ms, 2500, 4000)) : "")}
+    ${tile("Failing checks, mobile", fails("mobile") + "<small>of " + scored("mobile") + "</small>", "")}
+    ${tile("Failing checks, desktop", fails("desktop") + "<small>of " + scored("desktop") + "</small>", "")}
+  </div></section>`;
+
+  /* highlights */
+  const top = R.channels[0], q1 = R.queries[0], pg = R.pages[0];
+  const dev = R.devices, mob = dev.find(d => d.device === "mobile"), totClicks = dev.reduce((s, d) => s + d.gsc_clicks, 0);
+  const hl = [];
+  if (top) hl.push(`<b>${esc(top.channel_group)}</b> is the biggest traffic channel with ${n0(top.ga4_sessions)} sessions (${pct(top.ga4_sessions / ga.ga4_sessions, 0)} of the total); organic search brings ${pct(ga.ga4_sessions ? organic / ga.ga4_sessions : 0, 0)}.`);
+  if (q1) hl.push(`Top search query: <b>"${esc(q1.query)}"</b> with ${n0(q1.gsc_clicks)} clicks and ${n0(q1.gsc_impressions)} impressions (average position ${n1(q1.gsc_avg_position)}).`);
+  if (pg) hl.push(`Best page in search: <b>${esc(path(pg.page_url))}</b> with ${n0(pg.gsc_clicks)} clicks.`);
+  if (gs.gsc_impressions) hl.push(`The site was shown ${n0(gs.gsc_impressions)} times but clicked ${n0(gs.gsc_clicks)} times (${pct(gs.gsc_ctr, 2)}); the average position is ${n1(gs.gsc_avg_position)}, so most impressions are below the first page.`);
+  if (mob && totClicks) hl.push(`${pct(mob.gsc_clicks / totClicks, 0)} of search clicks come from mobile.`);
+  if (lh.mobile) hl.push(`Mobile performance score is ${Math.round(lh.mobile.lh_avg_performance)} (${scoreStatus(lh.mobile.lh_avg_performance)[1].toLowerCase()}), largest contentful paint ${(lh.mobile.lh_avg_lcp_ms / 1000).toFixed(1)} s against a 2.5 s target.`);
+  $("#highlights").innerHTML = hl.map(h => `<li>${h}</li>`).join("");
+
+  /* trends */
+  const sGa = series(D.daily.ga4, R.ga4_window, 0), sCl = series(D.daily.gsc, R.gsc_window, 0), sIm = series(D.daily.gsc, R.gsc_window, 1);
+  const trendTable = (pts, name) => () => ({ cols: [{ h: "Date" }, { h: name, r: 1 }], rows: pts.map(p => [p.d, n0(p.v)]) });
+  section("trends", [
+    { id: "t-sessions", title: "Sessions per day", src: "GA4", sub: "Visits to the website", draw: h => lineChart(h, sGa, { label: "sessions" }), table: trendTable(sGa, "Sessions") },
+    { id: "t-clicks", title: "Clicks per day", src: "Search Console", sub: "Visits from Google Search", draw: h => lineChart(h, sCl, { label: "clicks" }), table: trendTable(sCl, "Clicks") },
+    { id: "t-impr", title: "Impressions per day", src: "Search Console", sub: "Times shown in Google Search", draw: h => lineChart(h, sIm, { label: "impressions" }), table: trendTable(sIm, "Impressions") },
+  ]);
+
+  /* traffic */
+  const chPrev = Object.fromEntries((R.channels_prev || []).map(c => [c.channel_group, c.ga4_sessions]));
+  section("traffic", [
+    { id: "channels", title: "Sessions by channel", src: "GA4", sub: "Where visitors come from", draw: h => hbars(h, R.channels.map(c => ({ label: c.channel_group, value: c.ga4_sessions }))),
+      table: () => ({ cols: [{ h: "Channel" }, { h: "Sessions", r: 1 }, { h: "Share", r: 1 }, { h: "Engagement rate", r: 1 }, { h: R.channels_prev ? "Prev period" : "", r: 1 }], rows: R.channels.map(c => [esc(c.channel_group), n0(c.ga4_sessions), pct(c.ga4_sessions / ga.ga4_sessions, 1), pct(c.ga4_engagement_rate), R.channels_prev ? n0(chPrev[c.channel_group] || 0) : "–"]) }) },
+    { id: "sources", title: "Top sources", src: "GA4", sub: "Source and medium, by sessions",
+      draw: h => { const mx = Math.max(...R.sources.map(s => s.ga4_sessions), 1); h.innerHTML = tableHTML({ cols: [{ h: "Source / medium", name: 1 }, { h: "Sessions", r: 1 }, { h: "Engaged", r: 1 }, { h: "Pages/visit", r: 1 }], rows: R.sources.map(s => [esc(s.source + " / " + s.medium), `<span class="mini" style="width:${(s.ga4_sessions / mx * 60).toFixed(0)}px"></span>${n0(s.ga4_sessions)}`, pct(s.ga4_engagement_rate, 0), n1(s.ga4_pageviews_per_session)]) }); } },
+    { id: "ga4pages", title: "Most viewed pages", src: "GA4", sub: "Page views, top 10", span: 2, draw: h => hbars(h, R.ga4_pages.map(p => ({ label: path(p.page_url), value: p.ga4_page_pageviews }))),
+      table: () => ({ cols: [{ h: "Page", name: 1 }, { h: "Page views", r: 1 }], rows: R.ga4_pages.map(p => [esc(path(p.page_url)), n0(p.ga4_page_pageviews)]) }) },
+  ]);
+
+  /* search */
+  const dvTot = R.devices.reduce((s, d) => s + d.gsc_clicks, 0) || 1;
+  section("search", [
+    { id: "queries", title: "Top search queries", src: "Search Console", sub: `Top 15 of ${n0(R.queries_distinct)} queries, by clicks`, span: 2,
+      draw: h => { h.innerHTML = tableHTML({ cols: [{ h: "Query", name: 1 }, { h: "Clicks", r: 1 }, { h: "Impressions", r: 1 }, { h: "CTR", r: 1 }, { h: "Avg position", r: 1 }], rows: R.queries.map(q => [esc(q.query), n0(q.gsc_clicks), n0(q.gsc_impressions), pct(q.gsc_ctr, 1), n1(q.gsc_avg_position)]) }); } },
+    { id: "spages", title: "Top pages in search", src: "Search Console", sub: `Top 10 of ${n0(R.pages_distinct)} pages, by clicks`, span: 2,
+      draw: h => { h.innerHTML = tableHTML({ cols: [{ h: "Page", name: 1 }, { h: "Clicks", r: 1 }, { h: "Impressions", r: 1 }, { h: "CTR", r: 1 }, { h: "Avg position", r: 1 }], rows: R.pages.map(p => [esc(path(p.page_url)), n0(p.gsc_clicks), n0(p.gsc_impressions), pct(p.gsc_ctr, 1), n1(p.gsc_avg_position)]) }); } },
+    { id: "devices", title: "Search by device", src: "Search Console", sub: "Share of clicks",
+      draw: h => { h.innerHTML = tableHTML({ cols: [{ h: "Device" }, { h: "Clicks", r: 1 }, { h: "Share", r: 1 }, { h: "Impressions", r: 1 }, { h: "CTR", r: 1 }, { h: "Avg position", r: 1 }], rows: R.devices.map(d => [esc(d.device), `<span class="mini" style="width:${(d.gsc_clicks / dvTot * 60).toFixed(0)}px"></span>${n0(d.gsc_clicks)}`, pct(d.gsc_clicks / dvTot, 0), n0(d.gsc_impressions), pct(d.gsc_ctr, 1), n1(d.gsc_avg_position)]) }); } },
+    { id: "stypes", title: "Search by type", src: "Search Console", sub: "Web search is the bulk; the others are shown for completeness",
+      draw: h => { h.innerHTML = tableHTML({ cols: [{ h: "Search type" }, { h: "Clicks", r: 1 }, { h: "Impressions", r: 1 }], rows: R.search_types.filter(s => s.gsc_clicks || s.gsc_impressions).map(s => [esc(s.search_type), n0(s.gsc_clicks), n0(s.gsc_impressions)]) }); } },
+  ]);
+
+  /* lighthouse */
+  const cats = [["Performance", "lh_avg_performance"], ["Accessibility", "lh_avg_accessibility"], ["Best practices", "lh_avg_best_practices"], ["SEO", "lh_avg_seo"]];
+  const failing = {}; D.audits.forEach(a => { (failing[a.audit] = failing[a.audit] || {})[a.strategy] = a; });
+  const frows = Object.entries(failing).map(([name, s]) => ({ name, m: s.mobile, d: s.desktop })).filter(r => (r.m && r.m.failed > 0) || (r.d && r.d.failed > 0))
+    .sort((a, b) => ((b.m && b.m.failed > 0) + (b.d && b.d.failed > 0)) - ((a.m && a.m.failed > 0) + (a.d && a.d.failed > 0)) || a.name.localeCompare(b.name));
+  const mark = a => !a || !a.scored ? "–" : a.failed > 0 ? `<span class="status s-bad"><b aria-hidden="true">✕</b>Fails</span>` : `<span class="status s-good"><b aria-hidden="true">✓</b>Passes</span>`;
+  section("lh", [
+    { id: "lh-scores", title: "Category scores", src: "Lighthouse", sub: "0 to 100, higher is better (90+ good)",
+      draw: h => { h.innerHTML = `<div class="legend"><span style="--c:var(--s1)">Mobile</span><span style="--c:var(--s2)">Desktop</span></div>` + cats.map(([nm, k]) => `<div class="grp"><div class="name">${nm}</div>` + ["mobile", "desktop"].map((s, i) => { const v = lh[s] ? lh[s][k] : null; return v == null ? "" : `<div class="hbar" title="${nm}, ${s}: ${Math.round(v)}"><div class="lab" style="color:var(--ink2)">${s}</div><div class="track"><div class="fill" style="width:${v}%;background:${i ? "var(--s2)" : "var(--s1)"}"></div></div><div class="val">${Math.round(v)} ${statusHTML(scoreStatus(v))}</div></div>`; }).join("") + `</div>`).join(""); },
+      table: () => ({ cols: [{ h: "Category" }, { h: "Mobile", r: 1 }, { h: "Desktop", r: 1 }], rows: cats.map(([nm, k]) => [nm, lh.mobile ? Math.round(lh.mobile[k]) : "–", lh.desktop ? Math.round(lh.desktop[k]) : "–"]) }) },
+    { id: "lh-vitals", title: "Core web vitals and timings", src: "Lighthouse", sub: "Status uses Google's published thresholds",
+      draw: h => { h.innerHTML = tableHTML({ cols: [{ h: "Metric" }, { h: "Mobile", r: 1 }, { h: "" }, { h: "Desktop", r: 1 }, { h: "" }], rows: VITALS.map(([nm, k, g, o, f]) => [nm, lh.mobile ? f(lh.mobile[k]) : "–", lh.mobile ? statusHTML(vitalStatus(lh.mobile[k], g, o)) : "", lh.desktop ? f(lh.desktop[k]) : "–", lh.desktop ? statusHTML(vitalStatus(lh.desktop[k], g, o)) : ""]) }); } },
+    { id: "lh-audits", title: "Failing audits", src: "Lighthouse", sub: `${fails("mobile")} failing on mobile, ${fails("desktop")} on desktop; showing the first 15`, span: 2,
+      draw: h => { h.innerHTML = tableHTML({ cols: [{ h: "Audit", name: 1 }, { h: "Mobile" }, { h: "Desktop" }], rows: frows.slice(0, 15).map(r => [esc(r.name), mark(r.m), mark(r.d)]), empty: "No failing audits" }); } },
+  ]);
+
+  $("#notes").innerHTML = [
+    "<b>GA4 sessions and Search Console clicks are different measures.</b> They are shown side by side but never added together or divided by each other.",
+    "<b>Windows:</b> each source uses its own latest date, so Search Console (about 3 days behind) and GA4 end on different days. Deltas compare the window with the equal window just before it, and are hidden when that earlier window is not fully covered by data (GA4 starts on 9 Sep, Search Console on 6 Sep).",
+    "<b>Engagement rate</b> is derived from GA4's bounce rate (engaged sessions = sessions × (1 − bounce rate)). <b>Distinct users</b> are not shown: daily user counts cannot be added across days.",
+    "<b>Search Console</b> figures include all search types (about 98% is web search). Average position is weighted by impressions; lower is better.",
+    "<b>Lighthouse</b> shows the latest single run per device for the website home page, not a trend. Timings were converted from the report's text (such as \"3.3 s\") into milliseconds.",
+    "Every chart has a <b>Table view</b> button, and you can step through line charts with the arrow keys.",
+  ].map(t => `<li>${t}</li>`).join("");
+  $("#foot").textContent = "Snapshot generated from the Cube semantic layer (views seo_traffic, seo_pages, seo_search_*, seo_lighthouse_*). Re-run sl_test/dashboard/build_dashboard.py to refresh.";
+
+  Object.values(CARDS).forEach(paint);
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", e => {
+  const r = e.target.closest("[data-range]"); if (r) { RANGE = r.dataset.range; store.set("sl_range", RANGE); render(); return; }
+  const t = e.target.closest("[data-toggle]"); if (t) { const id = t.dataset.toggle; VIEW[id] = !VIEW[id]; const c = CARDS[id], card = $("#card-" + id); card.outerHTML = cardHTML(c); paint(c); }
+});
+const themeSel = $("#theme");
+function applyTheme(v) { if (v === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", v); }
+themeSel.value = store.get("sl_theme", "auto"); applyTheme(themeSel.value);
+themeSel.addEventListener("change", () => { store.set("sl_theme", themeSel.value); applyTheme(themeSel.value); });
+let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => Object.values(CARDS).forEach(paint), 120); });
+render();
+</script>
+</body>
+</html>
