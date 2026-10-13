@@ -1,0 +1,4 @@
+connection_id,customer_id,project_id,source_app_id,source_account_id,connection_name
+conn_pa_ga4,cust_predicta,proj_pa,ga4,539902445,GA4 property 539902445
+conn_pa_gsc,cust_predicta,proj_pa,gsc,sc-domain:predictaanalytics.io,Search Console predictaanalytics.io
+conn_pa_lighthouse,cust_predicta,proj_pa,lighthouse,2,Lighthouse predictaanalytics.io

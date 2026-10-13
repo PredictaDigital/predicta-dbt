@@ -1,0 +1,14 @@
+source,medium,channel_group
+(direct),(none),Direct
+google,organic,Organic Search
+bing,organic,Organic Search
+search.google.com,referral,Organic Search
+google,cpc,Paid Search
+linkedin.com,referral,Organic Social
+facebook.com,referral,Organic Social
+m.facebook.com,referral,Organic Social
+l.facebook.com,referral,Organic Social
+tumblr.com,referral,Organic Social
+chatgpt.com,ai-assistant,AI Assistant
+(not set),(not set),Unassigned
+(data not available),(data not available),Unassigned

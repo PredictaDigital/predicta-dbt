@@ -24,8 +24,17 @@ vars:
 
 seeds:
   predicta_dbt:
-    +schema: marts
-    +tags: ["shared"]
+    # Scoped per seed (not package-wide) so the sl_test seeds below do not inherit
+    # the "shared" tag. Behaviour for the two existing seeds is unchanged.
+    channel_mapping:
+      +schema: marts
+      +tags: ["shared"]
+    ga4_property_tenant:
+      +schema: marts
+      +tags: ["shared"]
+    sl_test:                          # semantic-layer test; removable with its folder
+      +schema: sl_test
+      +tags: ["sl_test"]
 
 models:
   predicta_dbt:
@@ -37,6 +46,11 @@ models:
         +tags: ["ga4"]
       ga4_reports:
         +tags: ["ga4_reports"]
+    sl_test:                          # semantic-layer test (SEO): everything lands in database sl_test
+      +schema: sl_test
+      +tags: ["sl_test"]
+      staging:
+        +materialized: view
     marts:
       +schema: marts
       shared:

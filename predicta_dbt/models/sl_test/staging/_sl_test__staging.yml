@@ -1,0 +1,755 @@
+version: 2
+
+models:
+  - name: stg_ga4__traffic_sources
+    description: "GA4 sessions and users by session source and medium, one row per day, after keeping only the latest Airbyte extract of each key. Engaged sessions are derived from the reported bounce rate."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, source, medium]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['ga4']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: source
+        description: "GA4 session source, for example google or (direct)."
+        data_tests:
+          - not_null
+      - name: medium
+        description: "GA4 session medium, for example organic or referral."
+        data_tests:
+          - not_null
+      - name: sessions
+        description: "Number of sessions that started on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: engaged_sessions
+        description: "Sessions that were engaged, derived as sessions multiplied by one minus the bounce rate."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: total_users
+        description: "Distinct users active on the day for this source and medium. Not additive across sources."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: new_users
+        description: "Users visiting for the first time on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: pageviews
+        description: "Screen or page views recorded in the sessions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: session_duration_sec
+        description: "Total session duration in seconds, derived as average duration multiplied by sessions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_ga4__pages
+    description: "GA4 page views per host and page path per day, after keeping only the latest Airbyte extract of each key. page_url is the normalised address used to build page_key."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, host_name, path_with_query]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['ga4']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: host_name
+        description: "Website host the page was served from."
+        data_tests:
+          - not_null
+      - name: path_with_query
+        description: "Page path including any query string, exactly as GA4 reports it."
+        data_tests:
+          - not_null
+      - name: page_url
+        description: "Normalised page URL: lower case, no query string, fragment or trailing slash."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: pageviews
+        description: "Screen or page views of the page on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_gsc__search_by_date
+    description: "Search Console clicks and impressions for the whole site per day and search type, after keeping only the latest Airbyte extract."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, search_type]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: search_type
+        description: "Search Console search type: web, image, news, discover, googleNews or video."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: clicks
+        description: "Clicks from Google Search to the site."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times the site appeared in Google Search results."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Average position multiplied by impressions. Additive; divide by position_impressions for the average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a reported position, the correct denominator for average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_gsc__search_by_page
+    description: "Search Console performance per page, day and search type, after keeping only the latest Airbyte extract. Page URLs are normalised."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, search_type, page_url_raw]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: search_type
+        description: "Search Console search type: web, image, news, discover, googleNews or video."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: page_url_raw
+        description: "Page URL exactly as Search Console reports it."
+        data_tests:
+          - not_null
+      - name: page_url
+        description: "Normalised page URL: lower case, no query string, fragment or trailing slash."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: clicks
+        description: "Clicks from Google Search to the site."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times the site appeared in Google Search results."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Average position multiplied by impressions. Additive; divide by position_impressions for the average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a reported position, the correct denominator for average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_gsc__search_by_device
+    description: "Search Console performance per device, day and search type, after keeping only the latest Airbyte extract."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, search_type, device]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: search_type
+        description: "Search Console search type: web, image, news, discover, googleNews or video."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: device
+        description: "Device the search was made on: desktop, mobile or tablet."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['desktop', 'mobile', 'tablet']
+      - name: clicks
+        description: "Clicks from Google Search to the site."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times the site appeared in Google Search results."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Average position multiplied by impressions. Additive; divide by position_impressions for the average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a reported position, the correct denominator for average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_gsc__search_by_query
+    description: "Search Console performance per search query, day and search type, after keeping only the latest Airbyte extract."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, search_type, query]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: search_type
+        description: "Search Console search type: web, image, news, discover, googleNews or video."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: query
+        description: "Search query typed by the user."
+        data_tests:
+          - not_null
+      - name: clicks
+        description: "Clicks from Google Search to the site."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times the site appeared in Google Search results."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Average position multiplied by impressions. Additive; divide by position_impressions for the average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a reported position, the correct denominator for average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_lighthouse__report
+    description: "One Lighthouse run per URL, device strategy and day, with category scores and core web vitals, after keeping only the latest Airbyte extract."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, page_url, strategy]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['lighthouse']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: page_url
+        description: "Normalised URL of the page that was audited."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: strategy
+        description: "Device profile Lighthouse simulated: mobile or desktop."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['mobile', 'desktop']
+      - name: performance_score
+        description: "Lighthouse performance category score from 0 to 100. Average it, never sum it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: accessibility_score
+        description: "Accessibility score from 0 to 100. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: best_practices_score
+        description: "Best practices score from 0 to 100. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: seo_score
+        description: "Lighthouse SEO score from 0 to 100. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: first_contentful_paint_ms
+        description: "First contentful paint in milliseconds. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: speed_index_ms
+        description: "Speed index in milliseconds. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: largest_contentful_paint_ms
+        description: "Largest contentful paint in milliseconds. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: time_to_interactive_ms
+        description: "Time to interactive in milliseconds. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: total_blocking_time_ms
+        description: "Total blocking time in milliseconds. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cumulative_layout_shift
+        description: "Cumulative layout shift, a unitless visual stability score. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_lighthouse__audit
+    description: "One Lighthouse audit result per URL, device strategy, day and audit id, after keeping only the latest Airbyte extract."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, page_url, strategy, audit_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['lighthouse']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: page_url
+        description: "Normalised URL of the page that was audited."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: strategy
+        description: "Device profile Lighthouse simulated: mobile or desktop."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['mobile', 'desktop']
+      - name: audit_id
+        description: "Lighthouse audit identifier, for example largest-contentful-paint."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: audit_title
+        description: "Short human-readable name of the audit."
+        data_tests:
+          - not_null
+      - name: audit_description
+        description: "Explanation of what the audit checks."
+        data_tests:
+          - not_null
+      - name: score
+        description: "Audit score from 0 (fail) to 1 (pass); -1 when the audit was not scored."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: -1
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: sl_url_normalisation_probe
+    description: "Test fixture, not a business model: runs the real URL normalisation macro over variants of the same page (tracking parameters, fragment, mixed case, trailing slash) so the normalisation can be proven."
+    columns:
+      - name: page_group
+        description: "Which page the variant belongs to: about, home or other."
+        data_tests:
+          - not_null
+      - name: raw_url
+        description: "The URL variant as it might arrive from a source."
+        data_tests:
+          - not_null
+      - name: normalised_url
+        description: "Result of the normalisation macro."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
