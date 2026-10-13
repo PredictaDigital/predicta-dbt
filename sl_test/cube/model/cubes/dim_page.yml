@@ -1,0 +1,28 @@
+cubes:
+  - name: dim_page
+    sql_table: sl_test.dim_page
+    public: false
+    description: "Pages (normalised URLs) per project, from GA4, Search Console and Lighthouse."
+    dimensions:
+      - name: dim_key
+        sql: concat(project_id, '|', toString(page_key))
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the page belongs to."
+      - name: page_url
+        sql: page_url
+        type: string
+        description: "Normalised page URL: lower case, no query string, fragment or trailing slash."
+      - name: host
+        sql: host
+        type: string
+        description: "Website host of the page."
+      - name: path
+        sql: path
+        type: string
+        description: "URL path of the page."

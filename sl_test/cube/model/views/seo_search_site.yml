@@ -1,0 +1,24 @@
+views:
+  - name: seo_search_site
+    description: "Google Search Console clicks, impressions, click-through rate and average position for the whole site per day and search type. Use for search visibility trend widgets."
+    cubes:
+      - join_path: gsc_site
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - search_type
+          - gsc_clicks
+          - gsc_impressions
+          - gsc_ctr
+          - gsc_avg_position
+      - join_path: gsc_site.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: gsc_site.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

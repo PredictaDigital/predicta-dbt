@@ -1,0 +1,29 @@
+views:
+  - name: seo_search_pages
+    description: "Google Search Console performance per page, day and search type. Use for top landing pages in search."
+    cubes:
+      - join_path: gsc_page
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - search_type
+          - gsc_clicks
+          - gsc_impressions
+          - gsc_ctr
+          - gsc_avg_position
+      - join_path: gsc_page.dim_page
+        includes:
+          - page_url
+          - host
+          - path
+      - join_path: gsc_page.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: gsc_page.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

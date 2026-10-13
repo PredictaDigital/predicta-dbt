@@ -1,0 +1,28 @@
+views:
+  - name: seo_search_devices
+    description: "Google Search Console performance per device, day and search type. Use for the mobile versus desktop split in search."
+    cubes:
+      - join_path: gsc_device
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - search_type
+          - device
+          - gsc_clicks
+          - gsc_impressions
+          - gsc_ctr
+          - gsc_avg_position
+      - join_path: gsc_device.dim_device
+        includes:
+          - device_group
+      - join_path: gsc_device.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: gsc_device.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

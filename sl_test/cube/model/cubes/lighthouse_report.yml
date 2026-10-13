@@ -1,0 +1,180 @@
+cubes:
+  - name: lighthouse_report
+    sql_table: sl_test.fct_lighthouse__report_daily
+    public: false
+    description: "One Lighthouse run per day, page and device strategy. Scores and timings are measurements, so the public measures are averages. Source cube: exposed through the seo_performance view."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+      - name: dim_page
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_page}.project_id AND {CUBE}.page_key = {dim_page}.page_key"
+      - name: dim_device
+        relationship: many_to_one
+        sql: "{CUBE}.strategy = {dim_device}.device"
+    dimensions:
+      - name: report_daily_key
+        sql: report_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: strategy
+        sql: strategy
+        type: string
+        description: "Device profile Lighthouse simulated: mobile or desktop."
+      - name: page_key
+        sql: toString(page_key)
+        type: string
+        description: "Key of the audited page."
+        public: false
+    measures:
+      - name: lh_runs
+        type: sum
+        sql: runs
+        description: "Number of Lighthouse runs. Use it to weight averages."
+      - name: performance_sum
+        type: sum
+        sql: performance_score
+        description: "Sum of performance_score over runs; numerator of the average."
+        public: false
+      - name: lh_avg_performance
+        type: number
+        sql: "{performance_sum} / NULLIF({lh_runs}, 0)"
+        description: "Lighthouse performance score from 0 to 100, averaged over runs."
+      - name: accessibility_sum
+        type: sum
+        sql: accessibility_score
+        description: "Sum of accessibility_score over runs; numerator of the average."
+        public: false
+      - name: lh_avg_accessibility
+        type: number
+        sql: "{accessibility_sum} / NULLIF({lh_runs}, 0)"
+        description: "Lighthouse accessibility score from 0 to 100, averaged over runs."
+      - name: best_practices_sum
+        type: sum
+        sql: best_practices_score
+        description: "Sum of best_practices_score over runs; numerator of the average."
+        public: false
+      - name: lh_avg_best_practices
+        type: number
+        sql: "{best_practices_sum} / NULLIF({lh_runs}, 0)"
+        description: "Lighthouse best practices score from 0 to 100, averaged over runs."
+      - name: seo_sum
+        type: sum
+        sql: seo_score
+        description: "Sum of seo_score over runs; numerator of the average."
+        public: false
+      - name: lh_avg_seo
+        type: number
+        sql: "{seo_sum} / NULLIF({lh_runs}, 0)"
+        description: "Lighthouse SEO score from 0 to 100, averaged over runs."
+      - name: fcp_ms_sum
+        type: sum
+        sql: first_contentful_paint_ms
+        description: "Sum of first_contentful_paint_ms over runs; numerator of the average."
+        public: false
+      - name: lh_avg_fcp_ms
+        type: number
+        sql: "{fcp_ms_sum} / NULLIF({lh_runs}, 0)"
+        description: "First contentful paint in milliseconds, averaged over runs."
+      - name: speed_index_ms_sum
+        type: sum
+        sql: speed_index_ms
+        description: "Sum of speed_index_ms over runs; numerator of the average."
+        public: false
+      - name: lh_avg_speed_index_ms
+        type: number
+        sql: "{speed_index_ms_sum} / NULLIF({lh_runs}, 0)"
+        description: "Speed index in milliseconds, averaged over runs."
+      - name: lcp_ms_sum
+        type: sum
+        sql: largest_contentful_paint_ms
+        description: "Sum of largest_contentful_paint_ms over runs; numerator of the average."
+        public: false
+      - name: lh_avg_lcp_ms
+        type: number
+        sql: "{lcp_ms_sum} / NULLIF({lh_runs}, 0)"
+        description: "Largest contentful paint in milliseconds, averaged over runs. Under 2500 is good."
+      - name: tti_ms_sum
+        type: sum
+        sql: time_to_interactive_ms
+        description: "Sum of time_to_interactive_ms over runs; numerator of the average."
+        public: false
+      - name: lh_avg_tti_ms
+        type: number
+        sql: "{tti_ms_sum} / NULLIF({lh_runs}, 0)"
+        description: "Time to interactive in milliseconds, averaged over runs."
+      - name: tbt_ms_sum
+        type: sum
+        sql: total_blocking_time_ms
+        description: "Sum of total_blocking_time_ms over runs; numerator of the average."
+        public: false
+      - name: lh_avg_tbt_ms
+        type: number
+        sql: "{tbt_ms_sum} / NULLIF({lh_runs}, 0)"
+        description: "Total blocking time in milliseconds, averaged over runs."
+      - name: cls_sum
+        type: sum
+        sql: cumulative_layout_shift
+        description: "Sum of cumulative_layout_shift over runs; numerator of the average."
+        public: false
+      - name: lh_avg_cls
+        type: number
+        sql: "{cls_sum} / NULLIF({lh_runs}, 0)"
+        description: "Cumulative layout shift, a unitless visual stability score, averaged over runs. Under 0.1 is good."
+    pre_aggregations:
+      - name: lighthouse_report_daily
+        measures:
+          - CUBE.lh_runs
+          - CUBE.performance_sum
+          - CUBE.accessibility_sum
+          - CUBE.best_practices_sum
+          - CUBE.seo_sum
+          - CUBE.fcp_ms_sum
+          - CUBE.speed_index_ms_sum
+          - CUBE.lcp_ms_sum
+          - CUBE.tti_ms_sum
+          - CUBE.tbt_ms_sum
+          - CUBE.cls_sum
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+          - CUBE.strategy
+          - dim_page.page_url
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

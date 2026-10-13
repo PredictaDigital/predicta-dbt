@@ -1,0 +1,24 @@
+cubes:
+  - name: dim_channel
+    sql_table: sl_test.dim_channel
+    public: false
+    description: "Marketing channel group for every GA4 source and medium."
+    dimensions:
+      - name: dim_key
+        sql: toString(channel_key)
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: source
+        sql: source
+        type: string
+        description: "Traffic source."
+      - name: medium
+        sql: medium
+        type: string
+        description: "Traffic medium."
+      - name: channel_group
+        sql: channel_group
+        type: string
+        description: "Marketing channel group, for example Organic Search, Direct or Referral."

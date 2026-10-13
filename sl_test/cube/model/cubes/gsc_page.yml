@@ -1,0 +1,103 @@
+cubes:
+  - name: gsc_page
+    sql_table: sl_test.fct_gsc__page_daily
+    public: false
+    description: "Search Console performance per normalised page, day and search type. Source cube: exposed through the seo_search view."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+      - name: dim_page
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_page}.project_id AND {CUBE}.page_key = {dim_page}.page_key"
+    dimensions:
+      - name: page_daily_key
+        sql: page_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: search_type
+        sql: search_type
+        type: string
+        description: "Search Console search type: web, image, news, discover, googleNews or video."
+      - name: page_key
+        sql: toString(page_key)
+        type: string
+        description: "Key of the normalised page URL."
+        public: false
+    measures:
+      - name: gsc_clicks
+        type: sum
+        sql: clicks
+        description: "Clicks from Google Search to the site, as Search Console counts them. Not comparable with GA4 sessions."
+      - name: gsc_impressions
+        type: sum
+        sql: impressions
+        description: "Times the site appeared in Google Search results."
+      - name: sum_position
+        type: sum
+        sql: sum_position
+        description: "Position multiplied by impressions; the additive numerator of average position."
+        public: false
+      - name: position_impressions
+        type: sum
+        sql: position_impressions
+        description: "Impressions that carry a reported position; the denominator of average position."
+        public: false
+      - name: gsc_ctr
+        type: number
+        sql: "{gsc_clicks} / NULLIF({gsc_impressions}, 0)"
+        description: "Click-through rate: Search Console clicks divided by impressions."
+        format: percent
+      - name: gsc_avg_position
+        type: number
+        sql: "{sum_position} / NULLIF({position_impressions}, 0)"
+        description: "Average Google Search position, weighted by impressions. Lower is better."
+    pre_aggregations:
+      - name: gsc_page_daily
+        measures:
+          - CUBE.gsc_clicks
+          - CUBE.gsc_impressions
+          - CUBE.sum_position
+          - CUBE.position_impressions
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+          - CUBE.search_type
+          - dim_page.page_url
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day
