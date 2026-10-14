@@ -25,6 +25,22 @@ TP = EXP["totals_project"]
 RESULTS = []
 P, C = "proj_pa", "cust_predicta"
 GOOD = None  # token for the real project
+# SL_BYPASS_ROLLUPS=1 adds the project_name dimension to every query. No rollup carries it, so the query
+# runs straight against ClickHouse. Use it when the target Cube has no working rollup builds.
+BYPASS = os.environ.get("SL_BYPASS_ROLLUPS", "") == "1"
+
+
+def visible(meta):
+    """Cubes the caller may use. Some Cube versions list hidden cubes in /meta flagged
+    public:false / isVisible:false, so filter on the flags and not only on presence."""
+    return [c for c in meta["cubes"] if c.get("isVisible", True) and c.get("public", True)]
+
+
+def cload(query, tok):
+    if BYPASS and query.get("measures"):
+        view = query["measures"][0].split(".")[0]
+        query = dict(query, dimensions=list(query.get("dimensions", [])) + [f"{view}.project_name"])
+    return cc.load(query, tok, tries=8, timeout=60)
 
 
 def record(cid, what, expected, actual, ok, note=""):
@@ -36,7 +52,7 @@ def close(a, b, tol=1e-6):
 
 
 def load(query, tok=None):
-    return cc.load(query, tok or GOOD)
+    return cload(query, tok or GOOD)
 
 
 def one(measures, view, tok=None):
@@ -76,7 +92,7 @@ def exp_measures():
 # ----------------------------------------------------------- C1 / C2
 def c1_c2():
     st, meta = cc.meta(GOOD)
-    public = {c["name"]: [m["name"].split(".")[1] for m in c["measures"]] for c in meta["cubes"]}
+    public = {c["name"]: [m["name"].split(".")[1] for m in c["measures"]] for c in visible(meta)}
     exp = exp_measures()
     additive_bad, ratio_bad, uncovered = [], [], []
     ratios = {"ga4_engagement_rate", "ga4_pageviews_per_session", "ga4_avg_session_duration_sec", "gsc_ctr", "gsc_avg_position", "lh_audit_failure_rate"} | \
@@ -106,7 +122,7 @@ def c1_c2():
 
 # ----------------------------------------------------------- C3
 def c3():
-    names = {c["name"] for c in cc.meta(GOOD)[1]["cubes"]}
+    names = {c["name"] for c in visible(cc.meta(GOOD)[1])}
     hidden = {"ga4_traffic", "ga4_page", "gsc_site", "gsc_page", "gsc_device", "gsc_query", "lighthouse_report", "lighthouse_audit"}
     st, js = load({"measures": ["ga4_traffic.ga4_sessions"]})
     ok = not (names & hidden) and st >= 400
@@ -139,7 +155,7 @@ def c5():
 
 
 def c6():
-    cubes = [c for c in cc.meta(GOOD)[1]["cubes"]]
+    cubes = visible(cc.meta(GOOD)[1])
     bad = []
     n = 0
     for c in cubes:
@@ -156,7 +172,7 @@ def count(tok, view="seo_traffic", extra=None):
     q = {"measures": [f"{view}.ga4_sessions"]}
     if extra:
         q.update(extra)
-    st, js = cc.load(q, tok)
+    st, js = cload(q, tok)
     if st != 200:
         return st, None
     rows = js.get("data", [])
@@ -199,6 +215,18 @@ def c8():
     record("C8", "Cache isolation: same widget query as token A then B with a warm cache", "B never receives A's rows",
            f"A={a1}, B={b1}, A again={a2}", ok,
            "Rollup use not testable here: the scratch Cube ran without rollups (Cube Store build fails on Windows). usedPreAggregations = none.")
+
+
+# ----------------------------------------------------------- R1 (rollup status)
+def r1():
+    q = {"measures": ["seo_traffic.ga4_sessions"], "dimensions": ["seo_traffic.channel_group"]}   # served by the ga4_traffic_daily rollup
+    t0 = __import__("time").time()
+    st, js = cc.load(q, GOOD, tries=3, timeout=60)
+    waited = round(__import__("time").time() - t0)
+    used = js.get("usedPreAggregations") if isinstance(js, dict) else None
+    ok = st == 200 and bool(used)
+    record("R1", "A rollup-eligible query is answered from a built rollup within about 3 minutes", "200 with usedPreAggregations",
+           f"status {st} after {waited}s, usedPreAggregations={list(used) if used else None}" + ("" if ok else f", error: {str(js.get('error', ''))[:110]}"), ok)
 
 
 # ----------------------------------------------------------- C9
@@ -262,7 +290,7 @@ def c9():
 
 if __name__ == "__main__":
     GOOD = cc.token({"customer_id": C, "project_ids": [P]})
-    for f in (c1_c2, c3, c4, c5, c6, c7, c8, c9):
+    for f in (c1_c2, c3, c4, c5, c6, c7, c8, c9, r1):
         try:
             f()
         except Exception as e:
