@@ -13,4 +13,6 @@ from (
     select 'desktop' as device, 'Computer' as device_group
     union all select 'mobile', 'Handheld'
     union all select 'tablet', 'Handheld'
+    union all select 'connected_tv', 'Living room'
+    union all select 'other', 'Other'
 )

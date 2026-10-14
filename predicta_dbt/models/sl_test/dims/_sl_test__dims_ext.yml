@@ -1,0 +1,502 @@
+version: 2
+
+models:
+  - name: sl_dim_country
+    description: "Countries seen in Search Console reports, as the lower-case three-letter code Search Console uses. Created as sl_test.dim_country."
+    columns:
+      - name: country
+        description: "Lower-case three-letter country code, as Search Console reports it."
+        data_tests:
+          - not_null
+          - unique
+      - name: country_label
+        description: "Upper-case code, for display."
+        data_tests:
+          - not_null
+  - name: dim_gsc_site
+    description: "Search Console properties connected to the project and the access level of the connected account."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, site_url]
+    columns:
+      - name: project_id
+        description: "Project the property belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: connection_id
+        description: "Connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: site_url
+        description: "Search Console property address."
+        data_tests:
+          - not_null
+      - name: permission_level
+        description: "Access level of the connected account."
+        data_tests:
+          - not_null
+  - name: dim_gsc_sitemap
+    description: "Sitemaps submitted to Search Console with processing status, errors and warnings."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, sitemap_path]
+    columns:
+      - name: project_id
+        description: "Project the sitemap belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: connection_id
+        description: "Connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: sitemap_path
+        description: "Address of the sitemap file."
+        data_tests:
+          - not_null
+      - name: is_pending
+        description: "1 when Google has not finished processing the sitemap."
+        data_tests:
+          - not_null
+      - name: is_sitemap_index
+        description: "1 when the file is an index of other sitemaps."
+        data_tests:
+          - not_null
+      - name: last_submitted
+        description: "When the sitemap was last submitted."
+        data_tests:
+          - not_null
+      - name: last_downloaded
+        description: "When Google last downloaded the sitemap."
+        data_tests:
+          - not_null
+      - name: errors
+        description: "Errors Google found."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: warnings
+        description: "Warnings Google found."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+  - name: dim_facebook_post
+    description: "One row per Facebook post with its text, type and link. Join facts on post_key."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, post_key]
+    columns:
+      - name: project_id
+        description: "Project the post belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: post_key
+        description: "Hash of project and post id."
+        data_tests:
+          - not_null
+      - name: post_id
+        description: "Facebook post identifier."
+        data_tests:
+          - not_null
+      - name: created_date
+        description: "Day the post was created."
+        data_tests:
+          - not_null
+      - name: message
+        description: "Post text, first 500 characters."
+        data_tests:
+          - not_null
+      - name: status_type
+        description: "Kind of post."
+        data_tests:
+          - not_null
+      - name: permalink_url
+        description: "Link to the post."
+        data_tests:
+          - not_null
+  - name: dim_instagram_media
+    description: "One row per Instagram media item with caption, type and link. Join facts on media_key."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, media_key]
+    columns:
+      - name: project_id
+        description: "Project the media belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: media_key
+        description: "Hash of project and media id."
+        data_tests:
+          - not_null
+      - name: media_id
+        description: "Instagram media identifier."
+        data_tests:
+          - not_null
+      - name: caption
+        description: "Caption, first 300 characters."
+        data_tests:
+          - not_null
+      - name: media_type
+        description: "IMAGE, VIDEO or CAROUSEL_ALBUM."
+        data_tests:
+          - not_null
+      - name: media_product_type
+        description: "FEED, REELS or STORY."
+        data_tests:
+          - not_null
+      - name: permalink
+        description: "Link to the post."
+        data_tests:
+          - not_null
+      - name: posted_date
+        description: "Day the media was posted."
+        data_tests:
+          - not_null
+  - name: dim_linkedin_organization
+    description: "LinkedIn organisation pages connected to the project."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, organization_id]
+    columns:
+      - name: project_id
+        description: "Project the page belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: connection_id
+        description: "Connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: organization_id
+        description: "LinkedIn organisation identifier."
+        data_tests:
+          - not_null
+      - name: organization_name
+        description: "Organisation name."
+        data_tests:
+          - not_null
+      - name: vanity_name
+        description: "Short name used in the page address."
+        data_tests:
+          - not_null
+      - name: organization_type
+        description: "Type of organisation."
+        data_tests:
+          - not_null
+  - name: dim_googleads_campaign
+    description: "Google Ads campaigns with their type and status."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, campaign_id]
+    columns:
+      - name: project_id
+        description: "Project the campaign belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: connection_id
+        description: "Connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: campaign_name
+        description: "Campaign name."
+        data_tests:
+          - not_null
+      - name: campaign_status
+        description: "ENABLED, PAUSED or REMOVED."
+        data_tests:
+          - not_null
+      - name: channel_type
+        description: "Campaign type, for example SEARCH."
+        data_tests:
+          - not_null
+  - name: dim_googleads_ad_group
+    description: "Google Ads ad groups with their campaign and status."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, ad_group_id]
+    columns:
+      - name: project_id
+        description: "Project the ad group belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: connection_id
+        description: "Connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: campaign_id
+        description: "Campaign the ad group belongs to."
+        data_tests:
+          - not_null
+      - name: ad_group_name
+        description: "Ad group name."
+        data_tests:
+          - not_null
+      - name: ad_group_status
+        description: "ENABLED, PAUSED or REMOVED."
+        data_tests:
+          - not_null
+  - name: dim_googleads_ad
+    description: "Google Ads ads (id and type), taken from the ad performance report."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, ad_id, ad_group_id]
+    columns:
+      - name: project_id
+        description: "Project the ad belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: connection_id
+        description: "Connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: ad_id
+        description: "Google Ads ad identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Ad group the ad belongs to."
+        data_tests:
+          - not_null
+      - name: ad_type
+        description: "Type of ad."
+        data_tests:
+          - not_null
+  - name: dim_ad_account
+    description: "Ad accounts across Google Ads, Meta Ads and LinkedIn Ads with their name and billing currency."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, platform, account_id]
+    columns:
+      - name: project_id
+        description: "Project the account belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: connection_id
+        description: "Connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: platform
+        description: "Ad platform: googleads, metaads or linkedinads."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['googleads', 'metaads', 'linkedinads']
+      - name: account_id
+        description: "Account identifier in the platform."
+        data_tests:
+          - not_null
+      - name: account_name
+        description: "Account name."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Billing currency."
+        data_tests:
+          - not_null
+      - name: status
+        description: "Account status where the platform reports one."
+        data_tests:
+          - not_null
+  - name: dim_metaads_campaign
+    description: "Meta Ads campaigns (identifier and name only; no delivery or spend data is loaded yet)."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, campaign_id]
+    columns:
+      - name: project_id
+        description: "Project the campaign belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: connection_id
+        description: "Connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: campaign_id
+        description: "Meta campaign identifier."
+        data_tests:
+          - not_null
+      - name: campaign_name
+        description: "Latest campaign name."
+        data_tests:
+          - not_null
+  - name: dim_metaads_adset
+    description: "Meta Ads ad sets (identifier and name only; no delivery or spend data is loaded yet)."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, adset_id]
+    columns:
+      - name: project_id
+        description: "Project the ad set belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: connection_id
+        description: "Connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: adset_id
+        description: "Meta ad set identifier."
+        data_tests:
+          - not_null
+      - name: adset_name
+        description: "Latest ad set name."
+        data_tests:
+          - not_null
+  - name: dim_metaads_ad
+    description: "Meta Ads ads (identifier and name only; no delivery or spend data is loaded yet)."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, ad_id]
+    columns:
+      - name: project_id
+        description: "Project the ad belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: connection_id
+        description: "Connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: ad_id
+        description: "Meta ad identifier."
+        data_tests:
+          - not_null
+      - name: ad_name
+        description: "Latest ad name."
+        data_tests:
+          - not_null
+  - name: dim_metaads_creative
+    description: "Meta Ads creatives with headline, text and format."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, creative_id]
+    columns:
+      - name: project_id
+        description: "Project the creative belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: connection_id
+        description: "Connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: creative_id
+        description: "Creative identifier."
+        data_tests:
+          - not_null
+      - name: creative_name
+        description: "Creative name."
+        data_tests:
+          - not_null
+      - name: title
+        description: "Headline."
+        data_tests:
+          - not_null
+      - name: body
+        description: "Primary text, first 300 characters."
+        data_tests:
+          - not_null
+      - name: object_type
+        description: "Creative format."
+        data_tests:
+          - not_null
+      - name: status
+        description: "Creative status."
+        data_tests:
+          - not_null
+      - name: call_to_action_type
+        description: "Call-to-action button."
+        data_tests:
+          - not_null
+  - name: dim_currency
+    description: "Currencies with the fixed test rate to US dollars. The rates are placeholders for testing, not live exchange rates."
+    columns:
+      - name: currency
+        description: "ISO currency code."
+        data_tests:
+          - not_null
+          - unique
+      - name: usd_rate
+        description: "US dollars per one unit of the currency (fixed test rate)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: note
+        description: "Where the rate comes from."
+        data_tests:
+          - not_null
