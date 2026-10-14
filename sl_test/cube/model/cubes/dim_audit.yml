@@ -1,0 +1,24 @@
+cubes:
+  - name: dim_audit
+    sql_table: sl_test.dim_audit
+    public: false
+    description: "Lighthouse audit catalogue with titles and descriptions."
+    dimensions:
+      - name: dim_key
+        sql: audit_id
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: audit_id
+        sql: audit_id
+        type: string
+        description: "Lighthouse audit identifier."
+      - name: audit_title
+        sql: audit_title
+        type: string
+        description: "Short name of the audit."
+      - name: audit_description
+        sql: audit_description
+        type: string
+        description: "What the audit checks."

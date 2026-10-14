@@ -1,0 +1,72 @@
+cubes:
+  - name: ga4_page
+    sql_table: sl_test.fct_ga4__page_daily
+    public: false
+    description: "GA4 page views per day and normalised page. Source cube: exposed through the seo_pages view."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+      - name: dim_page
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_page}.project_id AND {CUBE}.page_key = {dim_page}.page_key"
+    dimensions:
+      - name: page_daily_key
+        sql: page_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: page_key
+        sql: toString(page_key)
+        type: string
+        description: "Key of the normalised page URL."
+        public: false
+    measures:
+      - name: ga4_page_pageviews
+        type: sum
+        sql: pageviews
+        description: "Page views of the page, as GA4 counts them."
+    pre_aggregations:
+      - name: ga4_page_daily
+        measures:
+          - CUBE.ga4_page_pageviews
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+          - dim_page.page_url
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

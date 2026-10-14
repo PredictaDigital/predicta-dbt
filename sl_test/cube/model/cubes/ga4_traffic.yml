@@ -1,0 +1,115 @@
+cubes:
+  - name: ga4_traffic
+    sql_table: sl_test.fct_ga4__traffic_daily
+    public: false
+    description: "GA4 traffic per day, session source and session medium. Source cube: not queried directly, exposed through the seo_traffic view."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+      - name: dim_channel
+        relationship: many_to_one
+        sql: "{CUBE}.source = {dim_channel}.source AND {CUBE}.medium = {dim_channel}.medium"
+    dimensions:
+      - name: traffic_daily_key
+        sql: traffic_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: source
+        sql: source
+        type: string
+        description: "GA4 session source, for example google or (direct)."
+      - name: medium
+        sql: medium
+        type: string
+        description: "GA4 session medium, for example organic or referral."
+    measures:
+      - name: ga4_sessions
+        type: sum
+        sql: sessions
+        description: "Sessions started in the period, as GA4 counts them. Not comparable with Search Console clicks."
+      - name: ga4_engaged_sessions
+        type: sum
+        sql: engaged_sessions
+        description: "Engaged sessions, derived from GA4's bounce rate (sessions times one minus bounce rate)."
+      - name: ga4_user_days
+        type: sum
+        sql: total_users
+        description: "Sum of the daily active user counts. A user active on three days counts three times, so this is not distinct users."
+      - name: ga4_new_users
+        type: sum
+        sql: new_users
+        description: "Users who visited for the first time in the period."
+      - name: ga4_pageviews
+        type: sum
+        sql: pageviews
+        description: "Page views recorded in GA4 sessions."
+      - name: ga4_session_duration_total_sec
+        type: sum
+        sql: session_duration_sec
+        description: "Total session duration in seconds, the numerator of average session duration."
+      - name: ga4_engagement_rate
+        type: number
+        sql: "{ga4_engaged_sessions} / NULLIF({ga4_sessions}, 0)"
+        description: "Share of GA4 sessions that were engaged: engaged sessions divided by sessions."
+        format: percent
+      - name: ga4_pageviews_per_session
+        type: number
+        sql: "{ga4_pageviews} / NULLIF({ga4_sessions}, 0)"
+        description: "Average number of page views per GA4 session."
+      - name: ga4_avg_session_duration_sec
+        type: number
+        sql: "{ga4_session_duration_total_sec} / NULLIF({ga4_sessions}, 0)"
+        description: "Average session duration in seconds: total duration divided by sessions."
+    pre_aggregations:
+      - name: ga4_traffic_daily
+        measures:
+          - CUBE.ga4_sessions
+          - CUBE.ga4_engaged_sessions
+          - CUBE.ga4_user_days
+          - CUBE.ga4_new_users
+          - CUBE.ga4_pageviews
+          - CUBE.ga4_session_duration_total_sec
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+          - CUBE.source
+          - CUBE.medium
+          - dim_channel.channel_group
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

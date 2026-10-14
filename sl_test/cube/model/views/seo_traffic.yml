@@ -1,0 +1,32 @@
+views:
+  - name: seo_traffic
+    description: "GA4 website traffic by day, session source, medium and channel group: sessions, engagement, users and page views. Use for traffic trend and channel widgets."
+    cubes:
+      - join_path: ga4_traffic
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - source
+          - medium
+          - ga4_sessions
+          - ga4_engaged_sessions
+          - ga4_user_days
+          - ga4_new_users
+          - ga4_pageviews
+          - ga4_engagement_rate
+          - ga4_pageviews_per_session
+          - ga4_avg_session_duration_sec
+      - join_path: ga4_traffic.dim_channel
+        includes:
+          - channel_group
+      - join_path: ga4_traffic.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: ga4_traffic.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

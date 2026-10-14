@@ -1,0 +1,98 @@
+cubes:
+  - name: lighthouse_audit
+    sql_table: sl_test.fct_lighthouse__audit_daily
+    public: false
+    description: "One Lighthouse audit result per day, page, device strategy and audit. Source cube: exposed through the seo_performance view."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+      - name: dim_page
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_page}.project_id AND {CUBE}.page_key = {dim_page}.page_key"
+      - name: dim_device
+        relationship: many_to_one
+        sql: "{CUBE}.strategy = {dim_device}.device"
+      - name: dim_audit
+        relationship: many_to_one
+        sql: "{CUBE}.audit_id = {dim_audit}.audit_id"
+    dimensions:
+      - name: audit_daily_key
+        sql: audit_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: strategy
+        sql: strategy
+        type: string
+        description: "Device profile Lighthouse simulated: mobile or desktop."
+      - name: page_key
+        sql: toString(page_key)
+        type: string
+        description: "Key of the audited page."
+        public: false
+      - name: audit_id
+        sql: audit_id
+        type: string
+        description: "Lighthouse audit identifier, for example largest-contentful-paint."
+    measures:
+      - name: lh_audits_scored
+        type: sum
+        sql: audit_scored
+        description: "Audits that received a score."
+      - name: lh_audits_failed
+        type: sum
+        sql: audit_failed
+        description: "Audits that scored below 1 (failed or only partly passed)."
+      - name: lh_audit_failure_rate
+        type: number
+        sql: "{lh_audits_failed} / NULLIF({lh_audits_scored}, 0)"
+        description: "Share of scored Lighthouse audits that did not pass fully."
+        format: percent
+    pre_aggregations:
+      - name: lighthouse_audit_daily
+        measures:
+          - CUBE.lh_audits_scored
+          - CUBE.lh_audits_failed
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+          - CUBE.strategy
+          - CUBE.audit_id
+          - dim_page.page_url
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

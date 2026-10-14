@@ -1,0 +1,28 @@
+version: 2
+
+sources:
+  - name: sl_raw_pa
+    description: >
+      Airbyte raw streams for the Predicta Analytics (PA) client, loaded from the
+      AWS S3 bucket pa-poc-airbyte-data into ClickHouse database raw_pa_test.
+      One row per Airbyte record. The payload is the JSON string in _airbyte_data.
+      The same date can arrive in several syncs, so staging keeps only the latest
+      sync per natural key.
+    schema: raw_pa_test
+    tables:
+      - name: ga4_pa_traffic_sources
+        description: GA4 daily sessions and users by session source and medium.
+      - name: ga4_pa_pages
+        description: GA4 daily page views by host name and page path.
+      - name: gsc_pa_search_analytics_by_date
+        description: Search Console daily clicks and impressions for the whole site, per search type.
+      - name: gsc_pa_search_analytics_by_page
+        description: Search Console daily clicks, impressions and position per page, per search type.
+      - name: gsc_pa_search_analytics_by_device
+        description: Search Console daily clicks, impressions and position per device, per search type.
+      - name: gsc_pa_search_analytics_by_query
+        description: Search Console daily clicks, impressions and position per search query, per search type.
+      - name: lighthouse_pa_lighthouse_report
+        description: One Lighthouse run per URL, device strategy and day, with category scores and core web vitals.
+      - name: lighthouse_pa_lighthouse_audit
+        description: One row per Lighthouse audit result (check) per run.

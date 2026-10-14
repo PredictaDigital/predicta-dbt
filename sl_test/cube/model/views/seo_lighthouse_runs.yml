@@ -1,0 +1,36 @@
+views:
+  - name: seo_lighthouse_runs
+    description: "Lighthouse page speed and quality scores per page, day and device strategy: performance, accessibility, best practices, SEO and core web vitals. Scores are averages over runs."
+    cubes:
+      - join_path: lighthouse_report
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - strategy
+          - lh_runs
+          - lh_avg_performance
+          - lh_avg_accessibility
+          - lh_avg_best_practices
+          - lh_avg_seo
+          - lh_avg_fcp_ms
+          - lh_avg_speed_index_ms
+          - lh_avg_lcp_ms
+          - lh_avg_tti_ms
+          - lh_avg_tbt_ms
+          - lh_avg_cls
+      - join_path: lighthouse_report.dim_page
+        includes:
+          - page_url
+          - host
+          - path
+      - join_path: lighthouse_report.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: lighthouse_report.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

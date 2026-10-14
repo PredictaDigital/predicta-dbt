@@ -1,0 +1,25 @@
+views:
+  - name: seo_search_queries
+    description: "Google Search Console performance per search query, day and search type. Use for top queries and keyword widgets."
+    cubes:
+      - join_path: gsc_query
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - search_type
+          - query
+          - gsc_clicks
+          - gsc_impressions
+          - gsc_ctr
+          - gsc_avg_position
+      - join_path: gsc_query.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: gsc_query.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

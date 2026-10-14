@@ -1,0 +1,20 @@
+cubes:
+  - name: dim_device
+    sql_table: sl_test.dim_device
+    public: false
+    description: "Device categories used by Search Console and Lighthouse."
+    dimensions:
+      - name: dim_key
+        sql: device
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: device
+        sql: device
+        type: string
+        description: "Device category: desktop, mobile or tablet."
+      - name: device_group
+        sql: device_group
+        type: string
+        description: "Computer or Handheld grouping."

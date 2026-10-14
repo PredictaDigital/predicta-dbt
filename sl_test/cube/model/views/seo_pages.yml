@@ -1,0 +1,25 @@
+views:
+  - name: seo_pages
+    description: "GA4 page views per page and day. Use for top pages by traffic."
+    cubes:
+      - join_path: ga4_page
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - ga4_page_pageviews
+      - join_path: ga4_page.dim_page
+        includes:
+          - page_url
+          - host
+          - path
+      - join_path: ga4_page.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: ga4_page.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

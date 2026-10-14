@@ -1,0 +1,28 @@
+cubes:
+  - name: dim_project
+    sql_table: sl_test.dim_project
+    public: false
+    description: "Projects and the customer that owns each one."
+    dimensions:
+      - name: dim_key
+        sql: project_id
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project identifier."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project."
+      - name: project_name
+        sql: project_name
+        type: string
+        description: "Readable name of the project."
+      - name: customer_name
+        sql: customer_name
+        type: string
+        description: "Readable name of the customer."

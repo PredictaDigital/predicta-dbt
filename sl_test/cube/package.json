@@ -1,0 +1,10 @@
+{
+  "name": "sl-test-cube",
+  "private": true,
+  "description": "Cube Core semantic layer for the sl_test SEO models (removable with the sl_test folder)",
+  "scripts": { "start": "cubejs-server" },
+  "dependencies": {
+    "@cubejs-backend/server": "latest",
+    "@cubejs-backend/clickhouse-driver": "latest"
+  }
+}

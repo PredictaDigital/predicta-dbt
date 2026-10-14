@@ -1,0 +1,33 @@
+views:
+  - name: seo_lighthouse_audits
+    description: "Lighthouse audit results per page, day, device strategy and audit: how many checks were scored and how many failed. Use for the audit issues list."
+    cubes:
+      - join_path: lighthouse_audit
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - strategy
+          - audit_id
+          - lh_audits_scored
+          - lh_audits_failed
+          - lh_audit_failure_rate
+      - join_path: lighthouse_audit.dim_audit
+        includes:
+          - audit_title
+          - audit_description
+      - join_path: lighthouse_audit.dim_page
+        includes:
+          - page_url
+          - host
+          - path
+      - join_path: lighthouse_audit.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: lighthouse_audit.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

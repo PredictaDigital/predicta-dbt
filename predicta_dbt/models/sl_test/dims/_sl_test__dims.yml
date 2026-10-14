@@ -1,0 +1,192 @@
+version: 2
+
+models:
+  - name: sl_dim_date
+    description: "Shared calendar, one row per day from 2026-01-01 to 2028-12-31, in UTC. Created as sl_test.dim_date (named sl_dim_date to avoid a clash with the existing dim_date)."
+    columns:
+      - name: date
+        description: "Calendar date in UTC. Timezone convention: every date in this schema is a UTC calendar day."
+        data_tests:
+          - not_null
+          - unique
+      - name: year
+        description: "Calendar year."
+        data_tests:
+          - not_null
+      - name: quarter
+        description: "Calendar quarter 1 to 4."
+        data_tests:
+          - not_null
+      - name: month
+        description: "Month number 1 to 12."
+        data_tests:
+          - not_null
+      - name: month_name
+        description: "Month name."
+        data_tests:
+          - not_null
+      - name: month_start
+        description: "First day of the month."
+        data_tests:
+          - not_null
+      - name: iso_week
+        description: "ISO week number."
+        data_tests:
+          - not_null
+      - name: week_start
+        description: "Monday of the week."
+        data_tests:
+          - not_null
+      - name: day_of_week
+        description: "Day of week, 1 = Monday."
+        data_tests:
+          - not_null
+      - name: day_name
+        description: "Weekday name."
+        data_tests:
+          - not_null
+      - name: is_weekend
+        description: "1 for Saturday and Sunday."
+        data_tests:
+          - not_null
+  - name: sl_dim_channel
+    description: "Shared channel reference: every GA4 source and medium with its channel group, from the channel_map seed. Unlisted combinations fall back to Referral or Unassigned. Created as sl_test.dim_channel."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [source, medium]
+    columns:
+      - name: channel_key
+        description: "Hash key of source and medium."
+        data_tests:
+          - not_null
+          - unique
+      - name: source
+        description: "Traffic source."
+        data_tests:
+          - not_null
+      - name: medium
+        description: "Traffic medium."
+        data_tests:
+          - not_null
+      - name: channel_group
+        description: "Marketing channel group, for example Organic Search or Direct."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+  - name: sl_dim_device
+    description: "Shared device reference: desktop, mobile and tablet, with a Computer or Handheld grouping."
+    columns:
+      - name: device
+        description: "Device category in lower case."
+        data_tests:
+          - not_null
+          - unique
+      - name: device_group
+        description: "Computer or Handheld grouping."
+        data_tests:
+          - not_null
+  - name: dim_project
+    description: "One row per project. The project is the isolation boundary and belongs to one customer."
+    columns:
+      - name: project_id
+        description: "Project identifier."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Owning customer."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_name
+        description: "Project name."
+        data_tests:
+          - not_null
+      - name: customer_name
+        description: "Customer name."
+        data_tests:
+          - not_null
+  - name: dim_connection
+    description: "One row per source connection: the project it feeds, the source app and the account inside that app."
+    columns:
+      - name: connection_id
+        description: "Connection identifier."
+        data_tests:
+          - not_null
+          - unique
+      - name: project_id
+        description: "Project the connection belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: customer_id
+        description: "Owning customer."
+        data_tests:
+          - not_null
+      - name: source_app_id
+        description: "Source app: ga4, gsc or lighthouse."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['ga4', 'gsc', 'lighthouse']
+      - name: source_account_id
+        description: "Account in the source app."
+        data_tests:
+          - not_null
+      - name: connection_name
+        description: "Readable connection name."
+        data_tests:
+          - not_null
+  - name: sl_dim_page
+    description: "One row per project and normalised page URL, across GA4, Search Console and Lighthouse. Join facts on project_id and page_key."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, page_key]
+    columns:
+      - name: project_id
+        description: "Project the page belongs to."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: page_key
+        description: "Hash of project and normalised URL."
+        data_tests:
+          - not_null
+      - name: page_url
+        description: "Normalised page URL."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: host
+        description: "Website host."
+        data_tests:
+          - not_null
+      - name: path
+        description: "URL path."
+        data_tests:
+          - not_null
+  - name: dim_audit
+    description: "One row per Lighthouse audit with its title and description."
+    columns:
+      - name: audit_id
+        description: "Lighthouse audit identifier."
+        data_tests:
+          - not_null
+          - unique
+      - name: audit_title
+        description: "Short audit name."
+        data_tests:
+          - not_null
+      - name: audit_description
+        description: "What the audit checks."
+        data_tests:
+          - not_null

@@ -1,0 +1,854 @@
+version: 2
+
+models:
+  - name: fct_ga4__traffic_daily
+    description: "GA4 traffic per project, connection, day, session source and medium. Additive measures only; ratios are computed in the semantic layer."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, source, medium]
+    columns:
+      - name: traffic_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['ga4']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: source
+        description: "GA4 session source."
+        data_tests:
+          - not_null
+      - name: medium
+        description: "GA4 session medium."
+        data_tests:
+          - not_null
+      - name: sessions
+        description: "Sessions started on the day (GA4 definition)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: engaged_sessions
+        description: "Engaged sessions, derived from the reported bounce rate."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: total_users
+        description: "Active users. Not additive across sources or days."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: new_users
+        description: "First-time users."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: pageviews
+        description: "Page views."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: session_duration_sec
+        description: "Total session duration in seconds."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_ga4__page_daily
+    description: "GA4 page views per project, connection, day and normalised page. URL variants are summed onto one page_key."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, page_key]
+    columns:
+      - name: page_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['ga4']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: page_key
+        description: "Key of the normalised page URL. Join to dim_page on project_id and page_key."
+        data_tests:
+          - not_null
+      - name: pageviews
+        description: "Page views of the page on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_gsc__site_daily
+    description: "Search Console clicks and impressions for the whole site per day and search type."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, search_type]
+    columns:
+      - name: site_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: search_type
+        description: "Search Console search type."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: clicks
+        description: "Clicks from Google Search to the site."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times the site appeared in Google Search results."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Average position multiplied by impressions. Additive; divide by position_impressions for the average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a reported position, the correct denominator for average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_gsc__page_daily
+    description: "Search Console performance per normalised page, day and search type. URL variants are summed onto one page_key."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, page_key, search_type]
+    columns:
+      - name: page_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: page_key
+        description: "Key of the normalised page URL. Join to dim_page on project_id and page_key."
+        data_tests:
+          - not_null
+      - name: search_type
+        description: "Search Console search type."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: clicks
+        description: "Clicks from Google Search to the site."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times the site appeared in Google Search results."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Average position multiplied by impressions. Additive; divide by position_impressions for the average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a reported position, the correct denominator for average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_gsc__device_daily
+    description: "Search Console performance per device, day and search type."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, search_type, device]
+    columns:
+      - name: device_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: search_type
+        description: "Search Console search type."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: device
+        description: "Device: desktop, mobile or tablet."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_device')
+                field: device
+      - name: clicks
+        description: "Clicks from Google Search to the site."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times the site appeared in Google Search results."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Average position multiplied by impressions. Additive; divide by position_impressions for the average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a reported position, the correct denominator for average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_gsc__query_daily
+    description: "Search Console performance per search query, day and search type."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, search_type, query]
+    columns:
+      - name: query_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: search_type
+        description: "Search Console search type."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: query
+        description: "Search query typed by the user."
+        data_tests:
+          - not_null
+      - name: clicks
+        description: "Clicks from Google Search to the site."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times the site appeared in Google Search results."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Average position multiplied by impressions. Additive; divide by position_impressions for the average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a reported position, the correct denominator for average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_lighthouse__report_daily
+    description: "One Lighthouse run per project, day, page and device strategy. Scores are point-in-time measurements: average them, do not sum them."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, page_key, strategy]
+    columns:
+      - name: report_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['lighthouse']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: page_key
+        description: "Key of the audited page. Join to dim_page on project_id and page_key."
+        data_tests:
+          - not_null
+      - name: strategy
+        description: "Device profile: mobile or desktop."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_device')
+                field: device
+      - name: runs
+        description: "Number of Lighthouse runs the row represents (always 1); use it to weight averages."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: performance_score
+        description: "Lighthouse performance category score from 0 to 100. Average it, never sum it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: accessibility_score
+        description: "Accessibility score from 0 to 100. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: best_practices_score
+        description: "Best practices score from 0 to 100. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: seo_score
+        description: "Lighthouse SEO score from 0 to 100. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: first_contentful_paint_ms
+        description: "First contentful paint in milliseconds. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: speed_index_ms
+        description: "Speed index in milliseconds. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: largest_contentful_paint_ms
+        description: "Largest contentful paint in milliseconds. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: time_to_interactive_ms
+        description: "Time to interactive in milliseconds. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: total_blocking_time_ms
+        description: "Total blocking time in milliseconds. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cumulative_layout_shift
+        description: "Cumulative layout shift, a unitless visual stability score. Average it."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_lighthouse__audit_daily
+    description: "One Lighthouse audit result per project, day, page, device strategy and audit."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, page_key, strategy, audit_id]
+    columns:
+      - name: audit_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['lighthouse']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app: GA4 property, Search Console site or Lighthouse website."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: page_key
+        description: "Key of the normalised page URL. Join to dim_page on project_id and page_key."
+        data_tests:
+          - not_null
+      - name: strategy
+        description: "Device profile: mobile or desktop."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_device')
+                field: device
+      - name: audit_id
+        description: "Lighthouse audit identifier. Join to dim_audit."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_audit')
+                field: audit_id
+      - name: score
+        description: "Audit score 0 to 1; -1 when not scored."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: -1
+      - name: audit_failed
+        description: "1 when the audit scored below 1, otherwise 0. Additive: summing counts failed audits."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: audit_scored
+        description: "1 when the audit has a score, otherwise 0. Denominator for a failure rate."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null

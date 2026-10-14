@@ -1,0 +1,45 @@
+version: 2
+
+seeds:
+  - name: sl_projects
+    description: "Projects and the customer that owns each one. Edit to add a project."
+    config:
+      column_types:
+        customer_id: String
+        customer_name: String
+        project_id: String
+        project_name: String
+    columns:
+      - name: project_id
+        description: "Project identifier."
+        data_tests: [not_null, unique]
+      - name: customer_id
+        description: "Owning customer."
+        data_tests: [not_null]
+  - name: sl_connections
+    description: "Maps each source account (GA4 property, Search Console site, Lighthouse website) to its connection, project and customer. Staging joins on source_app_id and source_account_id."
+    config:
+      column_types:
+        connection_id: String
+        customer_id: String
+        project_id: String
+        source_app_id: String
+        source_account_id: String
+        connection_name: String
+    columns:
+      - name: connection_id
+        description: "Connection identifier."
+        data_tests: [not_null, unique]
+      - name: source_account_id
+        description: "Account inside the source app."
+        data_tests: [not_null]
+  - name: channel_map
+    description: "Maps a traffic source and medium to a marketing channel group."
+    columns:
+      - name: channel_group
+        description: "Marketing channel group."
+        data_tests: [not_null]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [source, medium]

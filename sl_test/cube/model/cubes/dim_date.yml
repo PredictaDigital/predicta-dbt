@@ -1,0 +1,32 @@
+cubes:
+  - name: dim_date
+    sql_table: sl_test.dim_date
+    public: false
+    description: "Calendar attributes for each UTC date."
+    dimensions:
+      - name: dim_key
+        sql: toString(date)
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: date
+        sql: date
+        type: time
+        description: "Calendar date (UTC)."
+      - name: month_start
+        sql: month_start
+        type: time
+        description: "First day of the month."
+      - name: week_start
+        sql: week_start
+        type: time
+        description: "Monday of the week."
+      - name: day_name
+        sql: day_name
+        type: string
+        description: "Name of the weekday, for example Monday."
+      - name: is_weekend
+        sql: is_weekend = 1
+        type: boolean
+        description: "True for Saturday and Sunday."
