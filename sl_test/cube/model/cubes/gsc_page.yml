@@ -69,12 +69,12 @@ cubes:
         public: false
       - name: gsc_ctr
         type: number
-        sql: "{gsc_clicks} / NULLIF({gsc_impressions}, 0)"
+        sql: "1.0 * {gsc_clicks} / NULLIF({gsc_impressions}, 0)"
         description: "Click-through rate: Search Console clicks divided by impressions."
         format: percent
       - name: gsc_avg_position
         type: number
-        sql: "{sum_position} / NULLIF({position_impressions}, 0)"
+        sql: "1.0 * {sum_position} / NULLIF({position_impressions}, 0)"
         description: "Average Google Search position, weighted by impressions. Lower is better."
     pre_aggregations:
       - name: gsc_page_daily

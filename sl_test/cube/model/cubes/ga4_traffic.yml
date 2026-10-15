@@ -74,16 +74,16 @@ cubes:
         description: "Total session duration in seconds, the numerator of average session duration."
       - name: ga4_engagement_rate
         type: number
-        sql: "{ga4_engaged_sessions} / NULLIF({ga4_sessions}, 0)"
+        sql: "1.0 * {ga4_engaged_sessions} / NULLIF({ga4_sessions}, 0)"
         description: "Share of GA4 sessions that were engaged: engaged sessions divided by sessions."
         format: percent
       - name: ga4_pageviews_per_session
         type: number
-        sql: "{ga4_pageviews} / NULLIF({ga4_sessions}, 0)"
+        sql: "1.0 * {ga4_pageviews} / NULLIF({ga4_sessions}, 0)"
         description: "Average number of page views per GA4 session."
       - name: ga4_avg_session_duration_sec
         type: number
-        sql: "{ga4_session_duration_total_sec} / NULLIF({ga4_sessions}, 0)"
+        sql: "1.0 * {ga4_session_duration_total_sec} / NULLIF({ga4_sessions}, 0)"
         description: "Average session duration in seconds: total duration divided by sessions."
     pre_aggregations:
       - name: ga4_traffic_daily

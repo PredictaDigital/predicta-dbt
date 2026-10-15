@@ -83,7 +83,7 @@ cubes:
         description: "1 when the verdict is PASS, otherwise 0. Additive: summing counts passing pages."
       - name: gsc_index_pass_rate
         type: number
-        sql: "{gsc_inspections_passed} / NULLIF({gsc_inspections}, 0)"
+        sql: "1.0 * {gsc_inspections_passed} / NULLIF({gsc_inspections}, 0)"
         description: "Share of inspected pages that Google reports as indexed without problems."
         format: percent
     pre_aggregations:

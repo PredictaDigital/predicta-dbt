@@ -69,7 +69,7 @@ cubes:
         description: "Audits that scored below 1 (failed or only partly passed)."
       - name: lh_audit_failure_rate
         type: number
-        sql: "{lh_audits_failed} / NULLIF({lh_audits_scored}, 0)"
+        sql: "1.0 * {lh_audits_failed} / NULLIF({lh_audits_scored}, 0)"
         description: "Share of scored Lighthouse audits that did not pass fully."
         format: percent
     pre_aggregations:

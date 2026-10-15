@@ -63,7 +63,7 @@ cubes:
         description: "Number of shares."
       - name: li_click_rate
         type: number
-        sql: "{li_clicks} / NULLIF({li_impressions}, 0)"
+        sql: "1.0 * {li_clicks} / NULLIF({li_impressions}, 0)"
         description: "Share of LinkedIn post impressions that led to a click."
         format: percent
     pre_aggregations:

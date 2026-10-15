@@ -112,16 +112,16 @@ cubes:
         description: "LinkedIn followers gained through paid promotion on the day. Counted by that platform only; not comparable with other platforms."
       - name: ig_interactions_per_view
         type: number
-        sql: "{ig_total_interactions} / NULLIF({ig_views}, 0)"
+        sql: "1.0 * {ig_total_interactions} / NULLIF({ig_views}, 0)"
         description: "Instagram interactions per view of Instagram content."
       - name: li_click_rate
         type: number
-        sql: "{li_clicks} / NULLIF({li_impressions}, 0)"
+        sql: "1.0 * {li_clicks} / NULLIF({li_impressions}, 0)"
         description: "Share of LinkedIn post impressions that led to a click."
         format: percent
       - name: fb_engagements_per_page_view
         type: number
-        sql: "{fb_post_engagements} / NULLIF({fb_page_views}, 0)"
+        sql: "1.0 * {fb_post_engagements} / NULLIF({fb_page_views}, 0)"
         description: "Facebook post engagements per page view."
     pre_aggregations:
       - name: smm_social_daily_daily

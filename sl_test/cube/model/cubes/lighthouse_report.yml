@@ -63,7 +63,7 @@ cubes:
         public: false
       - name: lh_avg_performance
         type: number
-        sql: "{performance_sum} / NULLIF({lh_runs}, 0)"
+        sql: "1.0 * {performance_sum} / NULLIF({lh_runs}, 0)"
         description: "Lighthouse performance score from 0 to 100, averaged over runs."
       - name: accessibility_sum
         type: sum
@@ -72,7 +72,7 @@ cubes:
         public: false
       - name: lh_avg_accessibility
         type: number
-        sql: "{accessibility_sum} / NULLIF({lh_runs}, 0)"
+        sql: "1.0 * {accessibility_sum} / NULLIF({lh_runs}, 0)"
         description: "Lighthouse accessibility score from 0 to 100, averaged over runs."
       - name: best_practices_sum
         type: sum
@@ -81,7 +81,7 @@ cubes:
         public: false
       - name: lh_avg_best_practices
         type: number
-        sql: "{best_practices_sum} / NULLIF({lh_runs}, 0)"
+        sql: "1.0 * {best_practices_sum} / NULLIF({lh_runs}, 0)"
         description: "Lighthouse best practices score from 0 to 100, averaged over runs."
       - name: seo_sum
         type: sum
@@ -90,7 +90,7 @@ cubes:
         public: false
       - name: lh_avg_seo
         type: number
-        sql: "{seo_sum} / NULLIF({lh_runs}, 0)"
+        sql: "1.0 * {seo_sum} / NULLIF({lh_runs}, 0)"
         description: "Lighthouse SEO score from 0 to 100, averaged over runs."
       - name: fcp_ms_sum
         type: sum
@@ -99,7 +99,7 @@ cubes:
         public: false
       - name: lh_avg_fcp_ms
         type: number
-        sql: "{fcp_ms_sum} / NULLIF({lh_runs}, 0)"
+        sql: "1.0 * {fcp_ms_sum} / NULLIF({lh_runs}, 0)"
         description: "First contentful paint in milliseconds, averaged over runs."
       - name: speed_index_ms_sum
         type: sum
@@ -108,7 +108,7 @@ cubes:
         public: false
       - name: lh_avg_speed_index_ms
         type: number
-        sql: "{speed_index_ms_sum} / NULLIF({lh_runs}, 0)"
+        sql: "1.0 * {speed_index_ms_sum} / NULLIF({lh_runs}, 0)"
         description: "Speed index in milliseconds, averaged over runs."
       - name: lcp_ms_sum
         type: sum
@@ -117,7 +117,7 @@ cubes:
         public: false
       - name: lh_avg_lcp_ms
         type: number
-        sql: "{lcp_ms_sum} / NULLIF({lh_runs}, 0)"
+        sql: "1.0 * {lcp_ms_sum} / NULLIF({lh_runs}, 0)"
         description: "Largest contentful paint in milliseconds, averaged over runs. Under 2500 is good."
       - name: tti_ms_sum
         type: sum
@@ -126,7 +126,7 @@ cubes:
         public: false
       - name: lh_avg_tti_ms
         type: number
-        sql: "{tti_ms_sum} / NULLIF({lh_runs}, 0)"
+        sql: "1.0 * {tti_ms_sum} / NULLIF({lh_runs}, 0)"
         description: "Time to interactive in milliseconds, averaged over runs."
       - name: tbt_ms_sum
         type: sum
@@ -135,7 +135,7 @@ cubes:
         public: false
       - name: lh_avg_tbt_ms
         type: number
-        sql: "{tbt_ms_sum} / NULLIF({lh_runs}, 0)"
+        sql: "1.0 * {tbt_ms_sum} / NULLIF({lh_runs}, 0)"
         description: "Total blocking time in milliseconds, averaged over runs."
       - name: cls_sum
         type: sum
@@ -144,7 +144,7 @@ cubes:
         public: false
       - name: lh_avg_cls
         type: number
-        sql: "{cls_sum} / NULLIF({lh_runs}, 0)"
+        sql: "1.0 * {cls_sum} / NULLIF({lh_runs}, 0)"
         description: "Cumulative layout shift, a unitless visual stability score, averaged over runs. Under 0.1 is good."
     pre_aggregations:
       - name: lighthouse_report_daily
