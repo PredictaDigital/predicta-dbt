@@ -43,3 +43,30 @@ seeds:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: [source, medium]
+  - name: metric_catalog
+    description: "Catalogue of every measure in the domain marts: its public name, definition, unit and source app, and whether it is comparable across sources. Measures that are not comparable keep source-qualified names."
+    config:
+      column_types:
+        mart: String
+        column_name: String
+        metric: String
+        domain: String
+        definition: String
+        unit: String
+        source_apps: String
+        comparable: String
+    columns:
+      - name: metric
+        description: "Public name of the measure."
+        data_tests: [not_null]
+      - name: comparable
+        description: "true when the unit, event definition and calculation match across sources."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['true', 'false']
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [mart, column_name]

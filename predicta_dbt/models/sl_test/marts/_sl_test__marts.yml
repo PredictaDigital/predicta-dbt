@@ -1,0 +1,299 @@
+version: 2
+
+models:
+  - name: mart_seo__search_daily
+    description: "SEO search performance per day, normalised page, search type, country and device. Currently the Search Console combined report; further search sources join by UNION ALL at this grain. Widgets read it through the seo view."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, page_key, search_type, country, device]
+    columns:
+      - name: search_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application the row came from (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+      - name: connection_id
+        description: "Source connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: source_account_id
+        description: "Account inside the source application."
+        data_tests:
+          - not_null
+      - name: date
+        description: "Business date (UTC calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: page_key
+        description: "Key of the normalised page URL. Join to dim_page on project_id and page_key."
+        data_tests:
+          - not_null
+      - name: search_type
+        description: "Search Console search type: web, image, news, discover, googleNews or video."
+        data_tests:
+          - not_null
+      - name: country
+        description: "Country the search came from, as a lower-case three-letter code."
+        data_tests:
+          - not_null
+      - name: device
+        description: "Device the search was made on: desktop, mobile or tablet."
+        data_tests:
+          - not_null
+      - name: clicks
+        description: "Clicks from Google Search to the site."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times the site appeared in Google Search results."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Average position multiplied by impressions; the additive numerator of average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a reported position; the denominator of average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: mart_ppc__campaign_daily
+    description: "Paid advertising per day and campaign across ad platforms, built by UNION ALL of the platform facts at one grain. Today only Google Ads has performance data. Conversions are platform-reported and kept under their own name. Widgets read it through the ppc view."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id]
+    columns:
+      - name: campaign_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application the row came from (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['googleads', 'metaads', 'linkedinads']
+      - name: connection_id
+        description: "Source connection that delivered the row."
+        data_tests:
+          - not_null
+      - name: source_account_id
+        description: "Account inside the source application."
+        data_tests:
+          - not_null
+      - name: date
+        description: "Business date (UTC calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: campaign_key
+        description: "Hash of project, connection and the platform's campaign id."
+        data_tests:
+          - not_null
+      - name: campaign_id
+        description: "Campaign identifier in the ad platform."
+        data_tests:
+          - not_null
+      - name: impressions
+        description: "Times an ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on ads."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend_original
+        description: "Cost in the own currency of the ad account."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: currency
+        description: "Currency of spend_original."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD', 'EUR', 'GBP', 'AUD']
+      - name: spend_usd
+        description: "Cost converted to US dollars at the fixed test rate."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: platform_conversions
+        description: "Conversions as the ad platform reports them. Not comparable with GA4 or other platforms."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: mart_dm__channel_daily
+    description: "Digital marketing overview per day and channel group with GA4, Search Console and paid advertising side by side in source-qualified columns. Built by UNION ALL at this grain. No column adds measures from different sources. Widgets read it through the digital_marketing view."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, date, channel_group]
+    columns:
+      - name: channel_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: date
+        description: "Business date (UTC calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: channel_group
+        description: "Marketing channel group, for example Organic Search, Direct or Paid Search."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: ga4_sessions
+        description: "Sessions started on the website as GA4 counts them. Not comparable with Search Console clicks."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ga4_engaged_sessions
+        description: "GA4 sessions that were engaged, derived from the bounce rate."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: gsc_clicks
+        description: "Clicks from Google Search as Search Console counts them. Not comparable with GA4 sessions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: gsc_impressions
+        description: "Times the site appeared in Google Search results."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ppc_impressions
+        description: "Times an ad was shown on any paid platform."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ppc_clicks
+        description: "Clicks on ads on any paid platform."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ppc_spend_usd
+        description: "Paid advertising cost in US dollars at the fixed test rate."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: platform_conversions
+        description: "Conversions as the ad platforms report them. Not comparable with GA4."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
