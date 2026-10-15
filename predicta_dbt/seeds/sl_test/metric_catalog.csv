@@ -1,0 +1,18 @@
+mart,column_name,metric,domain,definition,unit,source_apps,comparable
+mart_seo__search_daily,clicks,gsc_clicks,seo,Clicks from Google Search to the site as Search Console counts them,count,gsc,false
+mart_seo__search_daily,impressions,gsc_impressions,seo,Times the site appeared in Google Search results,count,gsc,false
+mart_seo__search_daily,sum_position,gsc_sum_position,seo,Average position multiplied by impressions; the additive numerator of average position,position x impressions,gsc,false
+mart_seo__search_daily,position_impressions,gsc_position_impressions,seo,Impressions that carry a reported position; the denominator of average position,count,gsc,false
+mart_ppc__campaign_daily,impressions,ppc_impressions,ppc,Times an ad was shown on any paid platform,count,googleads,true
+mart_ppc__campaign_daily,clicks,ppc_clicks,ppc,Clicks on ads on any paid platform,count,googleads,true
+mart_ppc__campaign_daily,spend_original,ppc_spend_original,ppc,Cost in the own currency of the ad account; only comparable within one currency,account currency,googleads,false
+mart_ppc__campaign_daily,spend_usd,ppc_spend_usd,ppc,Cost converted to US dollars at the fixed test rate,USD,googleads,true
+mart_ppc__campaign_daily,platform_conversions,platform_conversions,ppc,Conversions as each ad platform reports them; not comparable with GA4 or other platforms,count,googleads,false
+mart_dm__channel_daily,ga4_sessions,ga4_sessions,digital_marketing,Sessions started on the website as GA4 counts them,count,ga4,false
+mart_dm__channel_daily,ga4_engaged_sessions,ga4_engaged_sessions,digital_marketing,GA4 sessions that were engaged; derived from the bounce rate,count,ga4,false
+mart_dm__channel_daily,gsc_clicks,gsc_clicks,digital_marketing,Clicks from Google Search as Search Console counts them,count,gsc,false
+mart_dm__channel_daily,gsc_impressions,gsc_impressions,digital_marketing,Times the site appeared in Google Search results,count,gsc,false
+mart_dm__channel_daily,ppc_impressions,ppc_impressions,digital_marketing,Times an ad was shown on any paid platform,count,googleads,true
+mart_dm__channel_daily,ppc_clicks,ppc_clicks,digital_marketing,Clicks on ads on any paid platform,count,googleads,true
+mart_dm__channel_daily,ppc_spend_usd,ppc_spend_usd,digital_marketing,Cost converted to US dollars at the fixed test rate,USD,googleads,true
+mart_dm__channel_daily,platform_conversions,platform_conversions,digital_marketing,Conversions as each ad platform reports them; not comparable with GA4 or other platforms,count,googleads,false

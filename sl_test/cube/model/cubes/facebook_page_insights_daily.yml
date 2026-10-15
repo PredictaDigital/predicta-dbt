@@ -1,0 +1,143 @@
+cubes:
+  - name: facebook_page_insights_daily
+    sql_table: sl_test.fct_facebook__page_insights_daily
+    public: false
+    description: "Facebook page insights per day, one column per metric. Metrics named *_unique count people and cannot be added across days. Source cube: not queried directly, exposed through views."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+    dimensions:
+      - name: page_insights_daily_key
+        sql: page_insights_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+    measures:
+      - name: fb_page_media_view
+        type: sum
+        sql: page_media_view
+        description: "Times page content was viewed."
+      - name: fb_page_views_total
+        type: sum
+        sql: page_views_total
+        description: "Times the page was viewed."
+      - name: fb_page_follows
+        type: sum
+        sql: page_follows
+        description: "Page followers at the end of the day (running total)."
+      - name: fb_page_video_views
+        type: sum
+        sql: page_video_views
+        description: "Number of video views."
+      - name: fb_page_video_views_paid
+        type: sum
+        sql: page_video_views_paid
+        description: "Video views from ads."
+      - name: fb_page_video_views_organic
+        type: sum
+        sql: page_video_views_organic
+        description: "Video views not from ads."
+      - name: fb_page_video_views_unique
+        type: sum
+        sql: page_video_views_unique
+        description: "People who viewed videos (not additive across days)."
+      - name: fb_page_video_view_time
+        type: sum
+        sql: page_video_view_time
+        description: "Total video view time."
+      - name: fb_page_video_views_click_to_play
+        type: sum
+        sql: page_video_views_click_to_play
+        description: "Video views that started by a click."
+      - name: fb_page_total_actions
+        type: sum
+        sql: page_total_actions
+        description: "Clicks on call-to-action buttons and contact details."
+      - name: fb_page_post_engagements
+        type: sum
+        sql: page_post_engagements
+        description: "Reactions, comments, shares and clicks on posts."
+      - name: fb_page_daily_follows
+        type: sum
+        sql: page_daily_follows
+        description: "New follows on the day."
+      - name: fb_page_daily_follows_unique
+        type: sum
+        sql: page_daily_follows_unique
+        description: "People who followed on the day."
+      - name: fb_page_daily_unfollows_unique
+        type: sum
+        sql: page_daily_unfollows_unique
+        description: "People who unfollowed on the day."
+      - name: fb_page_total_media_view_unique
+        type: sum
+        sql: page_total_media_view_unique
+        description: "People who viewed page content (not additive across days)."
+      - name: fb_page_fan_adds_by_paid_non_paid_unique
+        type: sum
+        sql: page_fan_adds_by_paid_non_paid_unique
+        description: "New fans on the day, paid plus unpaid (total)."
+      - name: fb_page_lifetime_engaged_followers_unique
+        type: sum
+        sql: page_lifetime_engaged_followers_unique
+        description: "Engaged followers, lifetime (running total)."
+    pre_aggregations:
+      - name: facebook_page_insights_daily_daily
+        measures:
+          - CUBE.fb_page_media_view
+          - CUBE.fb_page_views_total
+          - CUBE.fb_page_follows
+          - CUBE.fb_page_video_views
+          - CUBE.fb_page_video_views_paid
+          - CUBE.fb_page_video_views_organic
+          - CUBE.fb_page_video_views_unique
+          - CUBE.fb_page_video_view_time
+          - CUBE.fb_page_video_views_click_to_play
+          - CUBE.fb_page_total_actions
+          - CUBE.fb_page_post_engagements
+          - CUBE.fb_page_daily_follows
+          - CUBE.fb_page_daily_follows_unique
+          - CUBE.fb_page_daily_unfollows_unique
+          - CUBE.fb_page_total_media_view_unique
+          - CUBE.fb_page_fan_adds_by_paid_non_paid_unique
+          - CUBE.fb_page_lifetime_engaged_followers_unique
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

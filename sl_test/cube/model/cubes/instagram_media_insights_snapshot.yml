@@ -1,0 +1,121 @@
+cubes:
+  - name: instagram_media_insights_snapshot
+    sql_table: sl_test.fct_instagram__media_insights_snapshot
+    public: false
+    description: "Instagram media insights as lifetime totals at each snapshot day, one column per metric. Use the latest snapshot per media item; do not sum across days. Source cube: not queried directly, exposed through views."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+      - name: dim_instagram_media
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_instagram_media}.project_id AND {CUBE}.media_key = {dim_instagram_media}.media_key"
+    dimensions:
+      - name: media_insights_key
+        sql: media_insights_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: media_key
+        sql: toString(media_key)
+        type: string
+        description: "Key of the Instagram media item. Join to dim_instagram_media."
+        public: false
+    measures:
+      - name: ig_reach
+        type: sum
+        sql: reach
+        description: "Accounts reached (lifetime)."
+      - name: ig_views
+        type: sum
+        sql: views
+        description: "Views, lifetime total."
+      - name: ig_likes
+        type: sum
+        sql: likes
+        description: "Likes received, lifetime total."
+      - name: ig_comments
+        type: sum
+        sql: comments
+        description: "Comments received, lifetime total."
+      - name: ig_shares
+        type: sum
+        sql: shares
+        description: "Shares, lifetime total."
+      - name: ig_saved
+        type: sum
+        sql: saved
+        description: "Saves, lifetime total."
+      - name: ig_follows
+        type: sum
+        sql: follows
+        description: "Follows driven by the media (lifetime)."
+      - name: ig_reposts
+        type: sum
+        sql: reposts
+        description: "Reposts, lifetime total."
+      - name: ig_profile_activity
+        type: sum
+        sql: profile_activity
+        description: "Profile actions driven by the media (lifetime)."
+      - name: ig_profile_visits
+        type: sum
+        sql: profile_visits
+        description: "Profile visits driven by the media (lifetime)."
+      - name: ig_total_interactions
+        type: sum
+        sql: total_interactions
+        description: "All interactions (lifetime)."
+    pre_aggregations:
+      - name: instagram_media_insights_snapshot_daily
+        measures:
+          - CUBE.ig_reach
+          - CUBE.ig_views
+          - CUBE.ig_likes
+          - CUBE.ig_comments
+          - CUBE.ig_shares
+          - CUBE.ig_saved
+          - CUBE.ig_follows
+          - CUBE.ig_reposts
+          - CUBE.ig_profile_activity
+          - CUBE.ig_profile_visits
+          - CUBE.ig_total_interactions
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

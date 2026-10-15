@@ -1,0 +1,68 @@
+cubes:
+  - name: instagram_views_by_media_type_daily
+    sql_table: sl_test.fct_instagram__views_by_media_type_daily
+    public: false
+    description: "Instagram views per day, split by where the media appears. Source cube: not queried directly, exposed through views."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+    dimensions:
+      - name: views_media_daily_key
+        sql: views_media_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: media_product_type
+        sql: media_product_type
+        type: string
+        description: "post, reel, story and so on."
+    measures:
+      - name: ig_views
+        type: sum
+        sql: views
+        description: "Number of views."
+    pre_aggregations:
+      - name: instagram_views_by_media_type_daily_daily
+        measures:
+          - CUBE.ig_views
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+          - CUBE.media_product_type
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

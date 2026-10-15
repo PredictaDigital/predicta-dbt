@@ -1,0 +1,117 @@
+cubes:
+  - name: ppc_campaign_daily
+    sql_table: sl_test.mart_ppc__campaign_daily
+    public: false
+    description: "PPC domain mart: paid advertising per day and campaign across ad platforms (Google Ads today)."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_googleads_campaign
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_googleads_campaign}.project_id AND {CUBE}.connection_id = {dim_googleads_campaign}.connection_id AND {CUBE}.campaign_id = {dim_googleads_campaign}.campaign_id"
+      - name: dim_currency
+        relationship: many_to_one
+        sql: "{CUBE}.currency = {dim_currency}.currency"
+    dimensions:
+      - name: campaign_daily_key
+        sql: campaign_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: campaign_id
+        sql: campaign_id
+        type: string
+        description: "Campaign identifier in the ad platform."
+      - name: currency
+        sql: currency
+        type: string
+        description: "Currency of the original spend: USD, EUR, GBP or AUD."
+      - name: source_app_id
+        sql: source_app_id
+        type: string
+        description: "Ad platform the row came from."
+    measures:
+      - name: ppc_impressions
+        type: sum
+        sql: impressions
+        description: "Times an ad was shown on any paid platform."
+      - name: ppc_clicks
+        type: sum
+        sql: clicks
+        description: "Clicks on ads on any paid platform."
+      - name: ppc_spend_original
+        type: sum
+        sql: spend_original
+        description: "Cost in the own currency of each ad account. Only meaningful within one currency; use ppc_spend_usd across currencies."
+      - name: ppc_spend_usd
+        type: sum
+        sql: spend_usd
+        description: "Cost converted to US dollars at the fixed test rate."
+      - name: platform_conversions
+        type: sum
+        sql: platform_conversions
+        description: "Conversions as each ad platform reports them. Not comparable with GA4 or other platforms."
+      - name: ppc_ctr
+        type: number
+        sql: "{ppc_clicks} / NULLIF({ppc_impressions}, 0)"
+        description: "Click-through rate of the ads: clicks divided by impressions."
+        format: percent
+      - name: ppc_cpc_usd
+        type: number
+        sql: "{ppc_spend_usd} / NULLIF({ppc_clicks}, 0)"
+        description: "Average cost per click in US dollars."
+      - name: ppc_cost_per_conversion_usd
+        type: number
+        sql: "{ppc_spend_usd} / NULLIF({platform_conversions}, 0)"
+        description: "Cost in US dollars per conversion the platform reports."
+    pre_aggregations:
+      - name: ppc_campaign_daily_daily
+        measures:
+          - CUBE.ppc_impressions
+          - CUBE.ppc_clicks
+          - CUBE.ppc_spend_original
+          - CUBE.ppc_spend_usd
+          - CUBE.platform_conversions
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+          - CUBE.currency
+          - CUBE.source_app_id
+          - CUBE.campaign_id
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

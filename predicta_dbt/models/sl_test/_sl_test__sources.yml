@@ -26,3 +26,81 @@ sources:
         description: One Lighthouse run per URL, device strategy and day, with category scores and core web vitals.
       - name: lighthouse_pa_lighthouse_audit
         description: One row per Lighthouse audit result (check) per run.
+      - name: facebook_pa_page
+        description: Airbyte raw stream page (Facebook), one row per record.
+      - name: facebook_pa_page_insights
+        description: Airbyte raw stream page_insights (Facebook), one row per record.
+      - name: facebook_pa_post
+        description: Airbyte raw stream post (Facebook), one row per record.
+      - name: facebook_pa_post_insights
+        description: Airbyte raw stream post_insights (Facebook), one row per record.
+      - name: facebook_pa_posts
+        description: Airbyte raw stream posts (Facebook), one row per record.
+      - name: googleads_pa_ad_group_details
+        description: Airbyte raw stream ad_group_details (Google Ads), one row per record.
+      - name: googleads_pa_ad_performance
+        description: Airbyte raw stream ad_performance (Google Ads), one row per record.
+      - name: googleads_pa_age_performance
+        description: Airbyte raw stream age_performance (Google Ads), one row per record.
+      - name: googleads_pa_campaign_details
+        description: Airbyte raw stream campaign_details (Google Ads), one row per record.
+      - name: googleads_pa_customer
+        description: Airbyte raw stream customer (Google Ads), one row per record.
+      - name: googleads_pa_device_performance
+        description: Airbyte raw stream device_performance (Google Ads), one row per record.
+      - name: googleads_pa_gender_performance
+        description: Airbyte raw stream gender_performance (Google Ads), one row per record.
+      - name: googleads_pa_keyword_performance
+        description: Airbyte raw stream keyword_performance (Google Ads), one row per record.
+      - name: googleads_pa_location_performance
+        description: Airbyte raw stream location_performance (Google Ads), one row per record.
+      - name: googleads_pa_performance
+        description: Airbyte raw stream performance (Google Ads), one row per record.
+      - name: googleads_pa_search_term_performance
+        description: Airbyte raw stream search_term_performance (Google Ads), one row per record.
+      - name: gsc_pa_search_analytics_all_fields
+        description: Airbyte raw stream search_analytics_all_fields (Search Console), one row per record.
+      - name: gsc_pa_search_analytics_by_country
+        description: Airbyte raw stream search_analytics_by_country (Search Console), one row per record.
+      - name: gsc_pa_sitemaps
+        description: Airbyte raw stream sitemaps (Search Console), one row per record.
+      - name: gsc_pa_sites
+        description: Airbyte raw stream sites (Search Console), one row per record.
+      - name: gsc_pa_url_inspection
+        description: Airbyte raw stream url_inspection (Search Console), one row per record.
+      - name: instagram_pa_account_insights
+        description: Airbyte raw stream account_insights (Instagram), one row per record.
+      - name: instagram_pa_media
+        description: Airbyte raw stream media (Instagram), one row per record.
+      - name: instagram_pa_media_insights
+        description: Airbyte raw stream media_insights (Instagram), one row per record.
+      - name: instagram_pa_profile
+        description: Airbyte raw stream profile (Instagram), one row per record.
+      - name: instagram_pa_reach_by_follow_type
+        description: Airbyte raw stream reach_by_follow_type (Instagram), one row per record.
+      - name: instagram_pa_user_insights
+        description: Airbyte raw stream user_insights (Instagram), one row per record.
+      - name: instagram_pa_users
+        description: Airbyte raw stream users (Instagram), one row per record.
+      - name: instagram_pa_views_by_media_type
+        description: Airbyte raw stream views_by_media_type (Instagram), one row per record.
+      - name: linkedin_pa_follower_statistics_time_bound
+        description: Airbyte raw stream follower_statistics_time_bound (LinkedIn), one row per record.
+      - name: linkedin_pa_organization_lookup
+        description: Airbyte raw stream organization_lookup (LinkedIn), one row per record.
+      - name: linkedin_pa_share_statistics_time_bound
+        description: Airbyte raw stream share_statistics_time_bound (LinkedIn), one row per record.
+      - name: linkedin_pa_total_follower_count
+        description: Airbyte raw stream total_follower_count (LinkedIn), one row per record.
+      - name: linkedinads_pa_accounts
+        description: Airbyte raw stream accounts (LinkedIn Ads), one row per record.
+      - name: metaads_pa_ad_account
+        description: Airbyte raw stream ad_account (Meta Ads), one row per record.
+      - name: metaads_pa_ad_creatives
+        description: Airbyte raw stream ad_creatives (Meta Ads), one row per record.
+      - name: metaads_pa_ads
+        description: Airbyte raw stream ads (Meta Ads), one row per record.
+      - name: metaads_pa_adsets
+        description: Airbyte raw stream adsets (Meta Ads), one row per record.
+      - name: metaads_pa_campaigns
+        description: Airbyte raw stream campaigns (Meta Ads), one row per record.

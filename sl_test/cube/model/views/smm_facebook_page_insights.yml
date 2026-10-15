@@ -1,0 +1,37 @@
+views:
+  - name: smm_facebook_page_insights
+    description: "Facebook page insights per day: page views, follows, video views and engagement."
+    cubes:
+      - join_path: facebook_page_insights_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - fb_page_media_view
+          - fb_page_views_total
+          - fb_page_follows
+          - fb_page_video_views
+          - fb_page_video_views_paid
+          - fb_page_video_views_organic
+          - fb_page_video_views_unique
+          - fb_page_video_view_time
+          - fb_page_video_views_click_to_play
+          - fb_page_total_actions
+          - fb_page_post_engagements
+          - fb_page_daily_follows
+          - fb_page_daily_follows_unique
+          - fb_page_daily_unfollows_unique
+          - fb_page_total_media_view_unique
+          - fb_page_fan_adds_by_paid_non_paid_unique
+          - fb_page_lifetime_engaged_followers_unique
+      - join_path: facebook_page_insights_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: facebook_page_insights_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

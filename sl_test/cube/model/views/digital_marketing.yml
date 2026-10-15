@@ -1,0 +1,32 @@
+views:
+  - name: digital_marketing
+    description: "Digital marketing overview per channel group and day with GA4 sessions, Search Console clicks and paid advertising side by side. Measures from different sources are never added together."
+    cubes:
+      - join_path: dm_channel_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - channel_group
+          - ga4_sessions
+          - ga4_engaged_sessions
+          - gsc_clicks
+          - gsc_impressions
+          - ppc_impressions
+          - ppc_clicks
+          - ppc_spend_usd
+          - platform_conversions
+          - ga4_engagement_rate
+          - gsc_ctr
+          - ppc_ctr
+          - ppc_cpc_usd
+      - join_path: dm_channel_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: dm_channel_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

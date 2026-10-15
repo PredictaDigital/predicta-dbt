@@ -1,0 +1,28 @@
+cubes:
+  - name: dim_googleads_ad
+    sql_table: sl_test.dim_googleads_ad
+    public: false
+    description: "Google Ads ads with their type."
+    dimensions:
+      - name: dim_key
+        sql: concat(project_id, '|', connection_id, '|', ad_id, '|', ad_group_id)
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the ad belongs to."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Connection that delivered the ad."
+      - name: ad_id
+        sql: ad_id
+        type: string
+        description: "Google Ads ad identifier."
+      - name: ad_type
+        sql: ad_type
+        type: string
+        description: "Type of ad."

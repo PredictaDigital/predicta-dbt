@@ -1,0 +1,38 @@
+views:
+  - name: smm_instagram_media
+    description: "Instagram media insights per post as lifetime totals at each snapshot day. Filter to the latest date for current totals."
+    cubes:
+      - join_path: instagram_media_insights_snapshot
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - ig_reach
+          - ig_views
+          - ig_likes
+          - ig_comments
+          - ig_shares
+          - ig_saved
+          - ig_follows
+          - ig_reposts
+          - ig_profile_activity
+          - ig_profile_visits
+          - ig_total_interactions
+      - join_path: instagram_media_insights_snapshot.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: instagram_media_insights_snapshot.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend
+      - join_path: instagram_media_insights_snapshot.dim_instagram_media
+        includes:
+          - caption
+          - media_type
+          - media_product_type
+          - permalink
+          - posted_date

@@ -1,0 +1,20 @@
+cubes:
+  - name: dim_currency
+    sql_table: sl_test.dim_currency
+    public: false
+    description: "Currencies with the fixed test rate to US dollars."
+    dimensions:
+      - name: dim_key
+        sql: currency
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: currency
+        sql: currency
+        type: string
+        description: "ISO currency code."
+      - name: usd_rate
+        sql: usd_rate
+        type: number
+        description: "US dollars per one unit of the currency (fixed test rate)."

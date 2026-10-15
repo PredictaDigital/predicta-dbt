@@ -1,0 +1,133 @@
+cubes:
+  - name: googleads_age_daily
+    sql_table: sl_test.fct_googleads__age_daily
+    public: false
+    description: "Google Ads performance per day and audience age band. Source cube: not queried directly, exposed through views."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+      - name: dim_googleads_campaign
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_googleads_campaign}.project_id AND {CUBE}.connection_id = {dim_googleads_campaign}.connection_id AND {CUBE}.campaign_id = {dim_googleads_campaign}.campaign_id"
+      - name: dim_googleads_ad_group
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_googleads_ad_group}.project_id AND {CUBE}.connection_id = {dim_googleads_ad_group}.connection_id AND {CUBE}.ad_group_id = {dim_googleads_ad_group}.ad_group_id"
+    dimensions:
+      - name: age_daily_key
+        sql: age_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: campaign_id
+        sql: campaign_id
+        type: string
+        description: "Google Ads campaign identifier."
+      - name: ad_group_id
+        sql: ad_group_id
+        type: string
+        description: "Google Ads ad group identifier."
+      - name: age_range
+        sql: age_range
+        type: string
+        description: "Audience age band, for example 25_34."
+      - name: currency
+        sql: currency
+        type: string
+        description: "Currency of the Google Ads account: the original currency of cost_micros and spend."
+    measures:
+      - name: ppc_impressions
+        type: sum
+        sql: impressions
+        description: "Times the ad was shown."
+      - name: ppc_clicks
+        type: sum
+        sql: clicks
+        description: "Clicks on the ad."
+      - name: cost_micros
+        type: sum
+        sql: cost_micros
+        description: "Cost in millionths of the account currency."
+        public: false
+      - name: platform_conversions
+        type: sum
+        sql: conversions
+        description: "Conversions recorded by Google Ads. Platform-reported: not comparable with GA4 conversions."
+      - name: platform_conversion_value
+        type: sum
+        sql: conversions_value
+        description: "Value of the conversions in the account currency."
+      - name: ppc_spend_original
+        type: sum
+        sql: spend
+        description: "Cost in the account currency (cost_micros divided by one million)."
+      - name: ppc_spend_usd
+        type: sum
+        sql: spend_usd
+        description: "Cost converted to US dollars at the fixed test rate in the sl_currency_rates seed."
+      - name: ppc_ctr
+        type: number
+        sql: "{ppc_clicks} / NULLIF({ppc_impressions}, 0)"
+        description: "Click-through rate of the ads: clicks divided by impressions."
+        format: percent
+      - name: ppc_cpc_usd
+        type: number
+        sql: "{ppc_spend_usd} / NULLIF({ppc_clicks}, 0)"
+        description: "Average cost per click in US dollars."
+      - name: ppc_cost_per_conversion_usd
+        type: number
+        sql: "{ppc_spend_usd} / NULLIF({platform_conversions}, 0)"
+        description: "Cost in US dollars per conversion the platform reports. Conversions are platform-reported."
+    pre_aggregations:
+      - name: googleads_age_daily_daily
+        measures:
+          - CUBE.ppc_impressions
+          - CUBE.ppc_clicks
+          - CUBE.cost_micros
+          - CUBE.platform_conversions
+          - CUBE.platform_conversion_value
+          - CUBE.ppc_spend_original
+          - CUBE.ppc_spend_usd
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+          - CUBE.campaign_id
+          - CUBE.ad_group_id
+          - CUBE.age_range
+          - CUBE.currency
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

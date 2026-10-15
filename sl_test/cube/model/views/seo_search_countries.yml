@@ -1,0 +1,29 @@
+views:
+  - name: seo_search_countries
+    description: "Google Search performance per country, day and search type."
+    cubes:
+      - join_path: gsc_country_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - search_type
+          - country
+          - gsc_clicks
+          - gsc_impressions
+          - gsc_ctr
+          - gsc_avg_position
+      - join_path: gsc_country_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: gsc_country_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend
+      - join_path: gsc_country_daily.dim_country
+        includes:
+          - country_label

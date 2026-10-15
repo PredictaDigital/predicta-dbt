@@ -29,9 +29,9 @@ def token(claims=None, secret=None, ttl=300):
     return f"{head}.{body}.{sig}"
 
 
-def call(path, tok, body=None, timeout=120):
-    """Return (http_status, parsed_json). Retries 'Continue wait' replies."""
-    for _ in range(30):
+def call(path, tok, body=None, timeout=120, tries=30):
+    """Return (http_status, parsed_json). Retries 'Continue wait' replies up to `tries` times."""
+    for _ in range(tries):
         data = json.dumps(body).encode() if body is not None else None
         req = urllib.request.Request(BASE + path, data=data, method="POST" if data else "GET",
                                      headers={"Authorization": tok or "", "Content-Type": "application/json"})
@@ -51,8 +51,8 @@ def call(path, tok, body=None, timeout=120):
     return 408, {"error": "timed out waiting for Cube"}
 
 
-def load(query, tok):
-    return call("/load", tok, {"query": query})
+def load(query, tok, tries=30, timeout=120):
+    return call("/load", tok, {"query": query}, timeout=timeout, tries=tries)
 
 
 def meta(tok):

@@ -19,6 +19,10 @@ with urls as (
     select project_id, page_url from {{ ref('stg_lighthouse__report') }}
     union all
     select project_id, page_url from {{ ref('stg_lighthouse__audit') }}
+    union all
+    select project_id, page_url from {{ ref('stg_gsc__search_all_fields') }}
+    union all
+    select project_id, page_url from {{ ref('stg_gsc__url_inspection') }}
 
 )
 

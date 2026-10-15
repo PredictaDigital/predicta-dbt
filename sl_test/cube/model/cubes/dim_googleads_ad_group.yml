@@ -1,0 +1,32 @@
+cubes:
+  - name: dim_googleads_ad_group
+    sql_table: sl_test.dim_googleads_ad_group
+    public: false
+    description: "Google Ads ad groups with status."
+    dimensions:
+      - name: dim_key
+        sql: concat(project_id, '|', connection_id, '|', ad_group_id)
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the ad group belongs to."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Connection that delivered the ad group."
+      - name: ad_group_id
+        sql: ad_group_id
+        type: string
+        description: "Google Ads ad group identifier."
+      - name: ad_group_name
+        sql: ad_group_name
+        type: string
+        description: "Ad group name."
+      - name: ad_group_status
+        sql: ad_group_status
+        type: string
+        description: "ENABLED, PAUSED or REMOVED."

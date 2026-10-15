@@ -11,6 +11,7 @@ import base64
 import glob
 import json
 import os
+import re
 import sys
 import urllib.request
 
@@ -25,6 +26,22 @@ TP = EXP["totals_project"]
 RESULTS = []
 P, C = "proj_pa", "cust_predicta"
 GOOD = None  # token for the real project
+# SL_BYPASS_ROLLUPS=1 adds the project_name dimension to every query. No rollup carries it, so the query
+# runs straight against ClickHouse. Use it when the target Cube has no working rollup builds.
+BYPASS = os.environ.get("SL_BYPASS_ROLLUPS", "") == "1"
+
+
+def visible(meta):
+    """Cubes the caller may use. Some Cube versions list hidden cubes in /meta flagged
+    public:false / isVisible:false, so filter on the flags and not only on presence."""
+    return [c for c in meta["cubes"] if c.get("isVisible", True) and c.get("public", True)]
+
+
+def cload(query, tok):
+    if BYPASS and query.get("measures"):
+        view = query["measures"][0].split(".")[0]
+        query = dict(query, dimensions=list(query.get("dimensions", [])) + [f"{view}.project_name"])
+    return cc.load(query, tok, tries=8, timeout=60)
 
 
 def record(cid, what, expected, actual, ok, note=""):
@@ -36,7 +53,7 @@ def close(a, b, tol=1e-6):
 
 
 def load(query, tok=None):
-    return cc.load(query, tok or GOOD)
+    return cload(query, tok or GOOD)
 
 
 def one(measures, view, tok=None):
@@ -76,7 +93,7 @@ def exp_measures():
 # ----------------------------------------------------------- C1 / C2
 def c1_c2():
     st, meta = cc.meta(GOOD)
-    public = {c["name"]: [m["name"].split(".")[1] for m in c["measures"]] for c in meta["cubes"]}
+    public = {c["name"]: [m["name"].split(".")[1] for m in c["measures"]] for c in visible(meta)}
     exp = exp_measures()
     additive_bad, ratio_bad, uncovered = [], [], []
     ratios = {"ga4_engagement_rate", "ga4_pageviews_per_session", "ga4_avg_session_duration_sec", "gsc_ctr", "gsc_avg_position", "lh_audit_failure_rate"} | \
@@ -84,6 +101,8 @@ def c1_c2():
     n1 = n2 = 0
     for view, ms in public.items():
         for m in ms:
+            if view not in exp:
+                continue   # newer views: every measure is verified against ClickHouse by C10
             if m not in exp.get(view, {}):
                 uncovered.append(f"{view}.{m}")
                 continue
@@ -106,7 +125,7 @@ def c1_c2():
 
 # ----------------------------------------------------------- C3
 def c3():
-    names = {c["name"] for c in cc.meta(GOOD)[1]["cubes"]}
+    names = {c["name"] for c in visible(cc.meta(GOOD)[1])}
     hidden = {"ga4_traffic", "ga4_page", "gsc_site", "gsc_page", "gsc_device", "gsc_query", "lighthouse_report", "lighthouse_audit"}
     st, js = load({"measures": ["ga4_traffic.ga4_sessions"]})
     ok = not (names & hidden) and st >= 400
@@ -139,7 +158,7 @@ def c5():
 
 
 def c6():
-    cubes = [c for c in cc.meta(GOOD)[1]["cubes"]]
+    cubes = visible(cc.meta(GOOD)[1])
     bad = []
     n = 0
     for c in cubes:
@@ -156,7 +175,7 @@ def count(tok, view="seo_traffic", extra=None):
     q = {"measures": [f"{view}.ga4_sessions"]}
     if extra:
         q.update(extra)
-    st, js = cc.load(q, tok)
+    st, js = cload(q, tok)
     if st != 200:
         return st, None
     rows = js.get("data", [])
@@ -199,6 +218,64 @@ def c8():
     record("C8", "Cache isolation: same widget query as token A then B with a warm cache", "B never receives A's rows",
            f"A={a1}, B={b1}, A again={a2}", ok,
            "Rollup use not testable here: the scratch Cube ran without rollups (Cube Store build fails on Windows). usedPreAggregations = none.")
+
+
+# ----------------------------------------------------------- C10 (every view measure vs ClickHouse)
+def c10():
+    """For each view: every public measure must equal the ClickHouse sum of its fact column; ratio measures must equal
+    the ratio of those sums. Reads the cube and view files to know which column each measure sums."""
+    cube_defs = {}
+    for f in glob.glob(os.path.join(MODEL, "cubes", "*.yml")):
+        for c in yaml.safe_load(open(f, encoding="utf-8"))["cubes"]:
+            cube_defs[c["name"]] = c
+    bad, n = [], 0
+    for f in glob.glob(os.path.join(MODEL, "views", "*.yml")):
+        v = yaml.safe_load(open(f, encoding="utf-8"))["views"][0]
+        root = v["cubes"][0]
+        cube = cube_defs[root["join_path"]]
+        ms = {m["name"]: m for m in cube.get("measures", [])}
+        wanted = [m for m in root["includes"] if m in ms]
+        if not wanted:
+            continue
+        table = cube["sql_table"]
+        sums = {}
+        for m in ms.values():
+            if m["type"] == "sum":
+                sums[m["name"]] = float(ch(f"select sum({m['sql']}) from {table} where project_id = '{P}'")[0][0] or 0)
+        def expected(name):
+            m = ms[name]
+            if m["type"] == "sum":
+                return sums[name]
+            a, b = re.findall(r"\{(\w+)\}", m["sql"])
+            return None if sums_or_calc(b) == 0 else sums_or_calc(a) / sums_or_calc(b)
+        def sums_or_calc(name):
+            m = ms[name]
+            return sums[name] if m["type"] == "sum" else expected(name)
+        st, got = one(wanted, v["name"])
+        if got is None:
+            bad.append((v["name"], f"query status {st}"))
+            continue
+        for name in wanted:
+            n += 1
+            e = expected(name)
+            if e is None:
+                continue
+            if not close(got[name], e, 1e-6):
+                bad.append((v["name"], name, e, got[name]))
+    record("C10", "Every public measure of every view equals its ClickHouse sum (ratios equal the ratio of sums)", f"{n} measures match",
+           "all match" if not bad else f"{len(bad)} differ, first {bad[:2]}", not bad)
+
+
+# ----------------------------------------------------------- R1 (rollup status)
+def r1():
+    q = {"measures": ["seo_traffic.ga4_sessions"], "dimensions": ["seo_traffic.channel_group"]}   # served by the ga4_traffic_daily rollup
+    t0 = __import__("time").time()
+    st, js = cc.load(q, GOOD, tries=3, timeout=60)
+    waited = round(__import__("time").time() - t0)
+    used = js.get("usedPreAggregations") if isinstance(js, dict) else None
+    ok = st == 200 and bool(used)
+    record("R1", "A rollup-eligible query is answered from a built rollup within about 3 minutes", "200 with usedPreAggregations",
+           f"status {st} after {waited}s, usedPreAggregations={list(used) if used else None}" + ("" if ok else f", error: {str(js.get('error', ''))[:110]}"), ok)
 
 
 # ----------------------------------------------------------- C9
@@ -262,7 +339,7 @@ def c9():
 
 if __name__ == "__main__":
     GOOD = cc.token({"customer_id": C, "project_ids": [P]})
-    for f in (c1_c2, c3, c4, c5, c6, c7, c8, c9):
+    for f in (c1_c2, c3, c4, c5, c6, c7, c8, c9, c10, r1):
         try:
             f()
         except Exception as e:

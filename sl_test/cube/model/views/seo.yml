@@ -1,0 +1,38 @@
+views:
+  - name: seo
+    description: "SEO domain view: Search Console clicks, impressions, click-through rate and average position per day, page, country, device and search type."
+    cubes:
+      - join_path: seo_search_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - search_type
+          - country
+          - device
+          - gsc_clicks
+          - gsc_impressions
+          - gsc_ctr
+          - gsc_avg_position
+      - join_path: seo_search_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: seo_search_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend
+      - join_path: seo_search_daily.dim_page
+        includes:
+          - page_url
+          - host
+          - path
+      - join_path: seo_search_daily.dim_country
+        includes:
+          - country_label
+      - join_path: seo_search_daily.dim_device
+        includes:
+          - device_group

@@ -1,0 +1,5 @@
+currency,usd_rate,note
+USD,1,base currency
+EUR,1.08,fixed test rate
+GBP,1.27,fixed test rate
+AUD,0.65,fixed test rate added for the Google Ads account which reports in AUD

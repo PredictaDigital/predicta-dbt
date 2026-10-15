@@ -1,0 +1,2802 @@
+version: 2
+
+models:
+  - name: stg_gsc__search_all_fields
+    description: "Grain: project, connection, date, search type, country, device, query and page URL as reported. Latest extract wins. Search Console leaves out anonymised queries from this report, so its totals are lower than the page report's."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, search_type, country, device, query, page_url_raw]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: search_type
+        description: "Search Console search type."
+        data_tests:
+          - not_null
+      - name: country
+        description: "Country the search came from, as a lower-case three-letter code."
+        data_tests:
+          - not_null
+      - name: device
+        description: "Device the search was made on: desktop, mobile or tablet."
+        data_tests:
+          - not_null
+      - name: query
+        description: "Search query typed by the user."
+        data_tests:
+          - not_null
+      - name: page_url_raw
+        description: "Page URL exactly as Search Console reports it."
+        data_tests:
+          - not_null
+      - name: page_url
+        description: "Normalised page URL."
+        data_tests:
+          - not_null
+      - name: clicks
+        description: "Clicks from Google Search to the site."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times the site appeared in Google Search results."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Average position multiplied by impressions; the additive numerator of average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a reported position; the denominator of average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_gsc__search_by_country
+    description: "Grain: project, connection, date, search type and country. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, search_type, country]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: search_type
+        description: "Search Console search type."
+        data_tests:
+          - not_null
+      - name: country
+        description: "Country the search came from, as a lower-case three-letter code."
+        data_tests:
+          - not_null
+      - name: clicks
+        description: "Clicks from Google Search to the site."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times the site appeared in Google Search results."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Average position multiplied by impressions; the additive numerator of average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a reported position; the denominator of average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_gsc__url_inspection
+    description: "Grain: project, connection, inspection date and page URL. One Search Console URL inspection result per page per day. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, page_url]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Date the URL was inspected."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: page_url
+        description: "Normalised URL that was inspected."
+        data_tests:
+          - not_null
+      - name: verdict
+        description: "Overall result of the inspection: PASS, NEUTRAL, FAIL or PARTIAL."
+        data_tests:
+          - not_null
+      - name: passed
+        description: "1 when the verdict is PASS, otherwise 0."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: coverage_state
+        description: "Index coverage state, for example 'Submitted and indexed'."
+        data_tests:
+          - not_null
+      - name: indexing_state
+        description: "Whether indexing is allowed for the page."
+        data_tests:
+          - not_null
+      - name: robots_txt_state
+        description: "Whether robots.txt allows crawling the page."
+        data_tests:
+          - not_null
+      - name: page_fetch_state
+        description: "Result of Google's last attempt to fetch the page."
+        data_tests:
+          - not_null
+      - name: mobile_usability_verdict
+        description: "Mobile usability result for the page."
+        data_tests:
+          - not_null
+      - name: rich_results_verdict
+        description: "Rich results (structured data) result for the page."
+        data_tests:
+          - not_null
+      - name: google_canonical
+        description: "Canonical URL Google chose for the page."
+        data_tests:
+          - not_null
+      - name: user_canonical
+        description: "Canonical URL declared by the page itself."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_gsc__sites
+    description: "Grain: project, connection and Search Console property. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, site_url]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: site_url
+        description: "Search Console property address."
+        data_tests:
+          - not_null
+      - name: permission_level
+        description: "Access level of the connected account on the property."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_gsc__sitemaps
+    description: "Grain: project, connection and sitemap. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, sitemap_path]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: sitemap_path
+        description: "Address of the sitemap file."
+        data_tests:
+          - not_null
+      - name: is_pending
+        description: "1 when Google has not finished processing the sitemap."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: is_sitemap_index
+        description: "1 when the file is an index of other sitemaps."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: last_submitted
+        description: "When the sitemap was last submitted."
+        data_tests:
+          - not_null
+      - name: last_downloaded
+        description: "When Google last downloaded the sitemap."
+        data_tests:
+          - not_null
+      - name: errors
+        description: "Number of errors Google found in the sitemap."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: warnings
+        description: "Number of warnings Google found in the sitemap."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_facebook__page
+    description: "Grain: project, connection and snapshot date: the page's follower and fan counts as they were that day. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['facebook']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the snapshot was taken."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: page_name
+        description: "Name of the Facebook page."
+        data_tests:
+          - not_null
+      - name: fan_count
+        description: "Number of people who like the page at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: followers_count
+        description: "Number of people who follow the page at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_facebook__page_insights
+    description: "Grain: project, connection, day and page insight metric. Handles both stream layouts (the older nested 'values' list and the newer one-row-per-metric layout). Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, metric]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['facebook']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the metric covers, as the end of Facebook's daily period."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: metric
+        description: "Facebook page insight metric name, for example page_views_total."
+        data_tests:
+          - not_null
+      - name: value
+        description: "Metric value for the day. Object values are summed (or use their total)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_facebook__post
+    description: "Grain: project, connection and post. Combines the 'post' and 'posts' streams; latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, post_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['facebook']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: post_id
+        description: "Facebook post identifier (page id and post id)."
+        data_tests:
+          - not_null
+      - name: created_date
+        description: "Day the post was created."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: message
+        description: "Text of the post, first 500 characters."
+        data_tests:
+          - not_null
+      - name: status_type
+        description: "Kind of post, for example added_photos."
+        data_tests:
+          - not_null
+      - name: permalink_url
+        description: "Link to the post on Facebook."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_facebook__post_insights
+    description: "Grain: project, connection, snapshot day, post and metric. Post metrics are lifetime totals, so each snapshot restates the running total. Handles both stream layouts; latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, post_id, metric]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['facebook']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the snapshot was taken (lifetime totals so far)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: post_id
+        description: "Facebook post identifier."
+        data_tests:
+          - not_null
+      - name: metric
+        description: "Facebook post insight metric name, for example post_media_view."
+        data_tests:
+          - not_null
+      - name: value
+        description: "Lifetime value of the metric at the snapshot. Object values are summed."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_instagram__media
+    description: "Grain: project, connection and media item. Latest extract wins. Older syncs have no account id, so they belong to the only Instagram connection."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, media_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: media_id
+        description: "Instagram media identifier."
+        data_tests:
+          - not_null
+      - name: caption
+        description: "Caption of the post, first 300 characters."
+        data_tests:
+          - not_null
+      - name: media_type
+        description: "IMAGE, VIDEO or CAROUSEL_ALBUM."
+        data_tests:
+          - not_null
+      - name: media_product_type
+        description: "Where the media appears: FEED, REELS or STORY."
+        data_tests:
+          - not_null
+      - name: permalink
+        description: "Link to the post on Instagram."
+        data_tests:
+          - not_null
+      - name: posted_date
+        description: "Day the media was posted."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_instagram__media_insights
+    description: "Grain: project, connection, snapshot day, media item and metric. Handles both stream layouts (older wide rows and newer one-row-per-metric rows); latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, media_id, metric]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the snapshot was taken (lifetime totals so far)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: media_id
+        description: "Instagram media identifier."
+        data_tests:
+          - not_null
+      - name: metric
+        description: "Instagram media insight metric name, for example reach."
+        data_tests:
+          - not_null
+      - name: value
+        description: "Lifetime value of the metric at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_instagram__account_insights
+    description: "Grain: project, connection, day and account metric. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, metric]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the metric covers."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: metric
+        description: "Instagram account insight metric name, for example reach or views."
+        data_tests:
+          - not_null
+      - name: value
+        description: "Metric value for the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_instagram__reach_by_follow_type
+    description: "Grain: project, connection, day and follower type. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, follow_type]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the reach covers."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: follow_type
+        description: "Whether the people reached follow the account: follower or non_follower."
+        data_tests:
+          - not_null
+      - name: reach
+        description: "Accounts reached."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_instagram__views_by_media_type
+    description: "Grain: project, connection, day and media product type. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, media_product_type]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the views cover."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: media_product_type
+        description: "Where the media appears: post, reel, story and so on."
+        data_tests:
+          - not_null
+      - name: views
+        description: "Views of the media type."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_instagram__user_reach
+    description: "Grain: project, connection and day. Only rows that carry a date are used (older syncs held identifiers only). Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the reach covers."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: reach
+        description: "Accounts reached on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: reach_days_28
+        description: "Accounts reached over the trailing 28 days (not additive across days)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: reach_week
+        description: "Accounts reached over the trailing week (not additive across days)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_instagram__profile
+    description: "Grain: project, connection and snapshot day. Combines the 'profile' and 'users' streams; latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the snapshot was taken."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: username
+        description: "Instagram handle."
+        data_tests:
+          - not_null
+      - name: followers_count
+        description: "Followers at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: follows_count
+        description: "Accounts followed at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: media_count
+        description: "Posts published at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_linkedin__share_stats
+    description: "Grain: project, connection and day. LinkedIn share statistics for the organisation page. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['linkedin']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the statistics cover."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: impressions
+        description: "Times the page's posts were shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: unique_impressions
+        description: "Distinct members who were shown the posts (not additive across days)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the page's posts."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: likes
+        description: "Likes on the page's posts."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: comments
+        description: "Comments on the page's posts."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: shares
+        description: "Shares of the page's posts."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_linkedin__follower_gains
+    description: "Grain: project, connection and day. Follower gains for the organisation page. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['linkedin']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the gains cover."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: organic_follower_gain
+        description: "Followers gained without paid promotion (can be negative net of unfollows)."
+        data_tests:
+          - not_null
+      - name: paid_follower_gain
+        description: "Followers gained through paid promotion."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_linkedin__follower_count
+    description: "Grain: project, connection and snapshot day. The stream has no organisation id, so rows belong to the only LinkedIn connection. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['linkedin']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the snapshot was taken."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: first_degree_size
+        description: "Total followers of the organisation page at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_linkedin__organization
+    description: "Grain: project, connection and organisation. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, organization_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['linkedin']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: organization_id
+        description: "LinkedIn organisation identifier."
+        data_tests:
+          - not_null
+      - name: organization_name
+        description: "Organisation name."
+        data_tests:
+          - not_null
+      - name: vanity_name
+        description: "Short name used in the page address."
+        data_tests:
+          - not_null
+      - name: organization_type
+        description: "Type of organisation."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_googleads__customer
+    description: "Grain: project, connection and Google Ads account. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, account_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: account_id
+        description: "Google Ads account (customer) identifier."
+        data_tests:
+          - not_null
+      - name: customer_name
+        description: "Account name."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Currency the account is billed in."
+        data_tests:
+          - not_null
+      - name: time_zone
+        description: "Time zone of the account."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_googleads__campaigns
+    description: "Grain: project, connection and campaign. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, campaign_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: campaign_name
+        description: "Campaign name."
+        data_tests:
+          - not_null
+      - name: campaign_status
+        description: "ENABLED, PAUSED or REMOVED."
+        data_tests:
+          - not_null
+      - name: channel_type
+        description: "Campaign type, for example SEARCH or PERFORMANCE_MAX."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_googleads__ad_groups
+    description: "Grain: project, connection and ad group. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, ad_group_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_name
+        description: "Ad group name."
+        data_tests:
+          - not_null
+      - name: ad_group_status
+        description: "ENABLED, PAUSED or REMOVED."
+        data_tests:
+          - not_null
+      - name: campaign_id
+        description: "Campaign the ad group belongs to."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_googleads__performance
+    description: "Grain: project, connection, day, campaign, ad group and network. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, network]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: network
+        description: "Ad network: search, display, youtube and so on."
+        data_tests:
+          - not_null
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads (platform-reported)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: currency
+        description: "Currency of the Google Ads account."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_googleads__ad_performance
+    description: "Grain: project, connection, day, campaign, ad group, ad, device and network. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, ad_id, device, network]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: ad_id
+        description: "Google Ads ad identifier."
+        data_tests:
+          - not_null
+      - name: ad_type
+        description: "Type of ad."
+        data_tests:
+          - not_null
+      - name: device
+        description: "Device the ad was shown on."
+        data_tests:
+          - not_null
+      - name: network
+        description: "Ad network."
+        data_tests:
+          - not_null
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads (platform-reported)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: currency
+        description: "Currency of the Google Ads account."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_googleads__keyword_performance
+    description: "Grain: project, connection, day, campaign, ad group and keyword. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, criterion_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: criterion_id
+        description: "Keyword criterion identifier."
+        data_tests:
+          - not_null
+      - name: keyword_text
+        description: "Keyword the ad bids on."
+        data_tests:
+          - not_null
+      - name: match_type
+        description: "EXACT, PHRASE or BROAD."
+        data_tests:
+          - not_null
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads (platform-reported)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: currency
+        description: "Currency of the Google Ads account."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_googleads__search_term_performance
+    description: "Grain: project, connection, day, campaign, ad group, search term and match type. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, search_term, match_type]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: search_term
+        description: "What the user actually searched for."
+        data_tests:
+          - not_null
+      - name: match_type
+        description: "How the search term matched a keyword."
+        data_tests:
+          - not_null
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads (platform-reported)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: currency
+        description: "Currency of the Google Ads account."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_googleads__device_performance
+    description: "Grain: project, connection, day, campaign, ad group and device. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, device]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: device
+        description: "Device the ad was shown on."
+        data_tests:
+          - not_null
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads (platform-reported)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: currency
+        description: "Currency of the Google Ads account."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_googleads__age_performance
+    description: "Grain: project, connection, day, campaign, ad group and age band. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, age_range]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: age_range
+        description: "Age band of the audience, for example 25_34 or undetermined."
+        data_tests:
+          - not_null
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads (platform-reported)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: currency
+        description: "Currency of the Google Ads account."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_googleads__gender_performance
+    description: "Grain: project, connection, day, campaign, ad group and gender. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, gender]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: gender
+        description: "Gender of the audience: male, female or undetermined."
+        data_tests:
+          - not_null
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads (platform-reported)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: currency
+        description: "Currency of the Google Ads account."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_googleads__location_performance
+    description: "Grain: project, connection, day, campaign, ad group and location. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, country_criterion_id, location_type, geo_target_region, geo_target_city]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: country_criterion_id
+        description: "Google geo target id of the country."
+        data_tests:
+          - not_null
+      - name: location_type
+        description: "Whether the user was in or interested in the location."
+        data_tests:
+          - not_null
+      - name: geo_target_region
+        description: "Google geo target of the region."
+        data_tests:
+          - not_null
+      - name: geo_target_city
+        description: "Google geo target of the city."
+        data_tests:
+          - not_null
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads (platform-reported)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: currency
+        description: "Currency of the Google Ads account."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_metaads__ad_account
+    description: "Grain: project, connection and snapshot day. Newer syncs carry only id and name; the dimension keeps the latest non-empty currency. Latest extract wins per day."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['metaads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the snapshot was taken."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: account_name
+        description: "Ad account name."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Billing currency (only present in some syncs)."
+        data_tests:
+          - not_null
+      - name: amount_spent
+        description: "Lifetime amount spent, in the smallest currency unit (only present in some syncs)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_metaads__campaigns
+    description: "Grain: project, connection, snapshot day and Meta campaign. The stream has no account id, so rows belong to the only Meta Ads connection. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['metaads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the snapshot was taken."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: campaign_id
+        description: "Meta campaign identifier."
+        data_tests:
+          - not_null
+      - name: campaign_name
+        description: "Meta campaign name."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_metaads__adsets
+    description: "Grain: project, connection, snapshot day and Meta ad set. The stream has no account id, so rows belong to the only Meta Ads connection. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, adset_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['metaads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the snapshot was taken."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: adset_id
+        description: "Meta ad set identifier."
+        data_tests:
+          - not_null
+      - name: adset_name
+        description: "Meta ad set name."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_metaads__ads
+    description: "Grain: project, connection, snapshot day and Meta ad. The stream has no account id, so rows belong to the only Meta Ads connection. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, ad_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['metaads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Day the snapshot was taken."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: toDate('2020-01-01')
+      - name: ad_id
+        description: "Meta ad identifier."
+        data_tests:
+          - not_null
+      - name: ad_name
+        description: "Meta ad name."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_metaads__ad_creatives
+    description: "Grain: project, connection and creative. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, creative_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['metaads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: creative_id
+        description: "Meta ad creative identifier."
+        data_tests:
+          - not_null
+      - name: creative_name
+        description: "Creative name."
+        data_tests:
+          - not_null
+      - name: title
+        description: "Headline of the creative."
+        data_tests:
+          - not_null
+      - name: body
+        description: "Primary text of the creative, first 300 characters."
+        data_tests:
+          - not_null
+      - name: object_type
+        description: "Creative format."
+        data_tests:
+          - not_null
+      - name: status
+        description: "Creative status."
+        data_tests:
+          - not_null
+      - name: call_to_action_type
+        description: "Call-to-action button."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null
+  - name: stg_linkedinads__accounts
+    description: "Grain: project, connection and LinkedIn Ads account. Latest extract wins."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, account_id]
+    columns:
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['linkedinads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: account_id
+        description: "LinkedIn Ads account identifier."
+        data_tests:
+          - not_null
+      - name: account_name
+        description: "Account name."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Billing currency."
+        data_tests:
+          - not_null
+      - name: status
+        description: "Account status, for example ACTIVE."
+        data_tests:
+          - not_null
+      - name: _extracted_at
+        description: "Airbyte extract time of the winning row (milliseconds since epoch)."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse."
+        data_tests:
+          - not_null

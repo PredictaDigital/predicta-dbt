@@ -1,0 +1,93 @@
+cubes:
+  - name: linkedin_share_daily
+    sql_table: sl_test.fct_linkedin__share_daily
+    public: false
+    description: "LinkedIn page post statistics per day. Source cube: not queried directly, exposed through views."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+    dimensions:
+      - name: share_daily_key
+        sql: share_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+    measures:
+      - name: li_impressions
+        type: sum
+        sql: impressions
+        description: "Times the page's posts were shown."
+      - name: li_unique_impressions
+        type: sum
+        sql: unique_impressions
+        description: "Distinct members shown the posts (not additive across days)."
+      - name: li_clicks
+        type: sum
+        sql: clicks
+        description: "Clicks on posts."
+      - name: li_likes
+        type: sum
+        sql: likes
+        description: "Likes received on the content."
+      - name: li_comments
+        type: sum
+        sql: comments
+        description: "Comments received on the content."
+      - name: li_shares
+        type: sum
+        sql: shares
+        description: "Number of shares."
+      - name: li_click_rate
+        type: number
+        sql: "{li_clicks} / NULLIF({li_impressions}, 0)"
+        description: "Share of LinkedIn post impressions that led to a click."
+        format: percent
+    pre_aggregations:
+      - name: linkedin_share_daily_daily
+        measures:
+          - CUBE.li_impressions
+          - CUBE.li_unique_impressions
+          - CUBE.li_clicks
+          - CUBE.li_likes
+          - CUBE.li_comments
+          - CUBE.li_shares
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

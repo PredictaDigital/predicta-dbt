@@ -1,0 +1,2670 @@
+version: 2
+
+models:
+  - name: fct_gsc__search_daily
+    description: "Search Console performance per day, normalised page, country, device and search type, from the combined report. Anonymised queries are left out by Search Console, so totals are lower than the page report's."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, page_key, search_type, country, device]
+    columns:
+      - name: search_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: page_key
+        description: "Key of the normalised page URL."
+        data_tests:
+          - not_null
+      - name: search_type
+        description: "Search Console search type."
+        data_tests:
+          - not_null
+      - name: country
+        description: "Country as a lower-case three-letter code."
+        data_tests:
+          - not_null
+      - name: device
+        description: "Device: desktop, mobile or tablet."
+        data_tests:
+          - not_null
+      - name: clicks
+        description: "Clicks from Google Search."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times shown in Google Search."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Position multiplied by impressions; numerator of average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a position; denominator of average position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_gsc__country_daily
+    description: "Search Console performance per country, day and search type."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, search_type, country]
+    columns:
+      - name: country_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: search_type
+        description: "Search Console search type."
+        data_tests:
+          - not_null
+      - name: country
+        description: "Country as a lower-case three-letter code."
+        data_tests:
+          - not_null
+      - name: clicks
+        description: "Clicks from Google Search."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: impressions
+        description: "Times shown in Google Search."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: sum_position
+        description: "Position multiplied by impressions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_impressions
+        description: "Impressions that carry a position."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_gsc__url_inspection_daily
+    description: "One Search Console URL inspection per page and day: whether Google indexed the page and any problems found."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, page_key, verdict, coverage_state, indexing_state, robots_txt_state, page_fetch_state, mobile_usability_verdict, rich_results_verdict]
+    columns:
+      - name: inspection_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['gsc']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: page_key
+        description: "Key of the inspected page."
+        data_tests:
+          - not_null
+      - name: verdict
+        description: "Overall result: PASS, NEUTRAL, FAIL or PARTIAL."
+        data_tests:
+          - not_null
+      - name: coverage_state
+        description: "Index coverage state."
+        data_tests:
+          - not_null
+      - name: indexing_state
+        description: "Whether indexing is allowed."
+        data_tests:
+          - not_null
+      - name: robots_txt_state
+        description: "Whether robots.txt allows crawling."
+        data_tests:
+          - not_null
+      - name: page_fetch_state
+        description: "Result of Google's last fetch."
+        data_tests:
+          - not_null
+      - name: mobile_usability_verdict
+        description: "Mobile usability result."
+        data_tests:
+          - not_null
+      - name: rich_results_verdict
+        description: "Rich results result."
+        data_tests:
+          - not_null
+      - name: inspections
+        description: "Number of inspections the row represents (always 1)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: passed
+        description: "1 when the verdict is PASS, otherwise 0. Additive: summing counts passing pages."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_facebook__page_daily
+    description: "Facebook page audience snapshot per day. Counts are totals at that day, not daily changes: average or take the latest, do not sum across days."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: page_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['facebook']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: fan_count
+        description: "People who like the page at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: followers_count
+        description: "People who follow the page at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_facebook__page_insights_daily
+    description: "Facebook page insights per day, one column per metric. Metrics named *_unique count people and cannot be added across days."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: page_insights_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['facebook']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: page_media_view
+        description: "Times page content was viewed."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_views_total
+        description: "Times the page was viewed."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_follows
+        description: "Page followers at the end of the day (running total)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_video_views
+        description: "Video views."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_video_views_paid
+        description: "Video views from ads."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_video_views_organic
+        description: "Video views not from ads."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_video_views_unique
+        description: "People who viewed videos (not additive across days)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_video_view_time
+        description: "Total video view time."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_video_views_click_to_play
+        description: "Video views that started by a click."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_total_actions
+        description: "Clicks on call-to-action buttons and contact details."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_post_engagements
+        description: "Reactions, comments, shares and clicks on posts."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_daily_follows
+        description: "New follows on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_daily_follows_unique
+        description: "People who followed on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_daily_unfollows_unique
+        description: "People who unfollowed on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_total_media_view_unique
+        description: "People who viewed page content (not additive across days)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_fan_adds_by_paid_non_paid_unique
+        description: "New fans on the day, paid plus unpaid (total)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: page_lifetime_engaged_followers_unique
+        description: "Engaged followers, lifetime (running total)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_facebook__post_insights_snapshot
+    description: "Facebook post insights as lifetime totals at each snapshot day, one column per metric. Each snapshot restates the running total: use the latest snapshot per post, do not sum across days."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, post_key]
+    columns:
+      - name: post_insights_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['facebook']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: post_key
+        description: "Key of the Facebook post. Join to dim_facebook_post."
+        data_tests:
+          - not_null
+      - name: post_media_view
+        description: "Times the post was viewed (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: post_total_media_view_unique
+        description: "People who viewed the post (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: post_clicks
+        description: "Clicks on the post (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: post_video_views
+        description: "Video views of the post (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: post_video_views_unique
+        description: "People who viewed the video (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: post_video_complete_views_30s
+        description: "Video views of at least 30 seconds (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: post_clicks_by_type
+        description: "Clicks of all types, summed (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: post_activity_by_action_type
+        description: "Shares, comments and other actions, summed (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: post_reactions_by_type_total
+        description: "Reactions of all types, summed (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_instagram__account_daily
+    description: "Instagram account insights per day, one column per metric. Reach and accounts engaged count people and cannot be added across days."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: account_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: reach
+        description: "Accounts reached (not additive across days)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: views
+        description: "Times content was viewed."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: likes
+        description: "Likes."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: comments
+        description: "Comments."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: saves
+        description: "Saves."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: shares
+        description: "Shares."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: reposts
+        description: "Reposts."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: replies
+        description: "Story replies."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: profile_views
+        description: "Profile views."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: accounts_engaged
+        description: "Accounts that interacted (not additive across days)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: website_clicks
+        description: "Taps on the website link."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: profile_links_taps
+        description: "Taps on profile links."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: total_interactions
+        description: "All interactions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_instagram__media_insights_snapshot
+    description: "Instagram media insights as lifetime totals at each snapshot day, one column per metric. Use the latest snapshot per media item; do not sum across days."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, media_key]
+    columns:
+      - name: media_insights_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: media_key
+        description: "Key of the Instagram media item. Join to dim_instagram_media."
+        data_tests:
+          - not_null
+      - name: reach
+        description: "Accounts reached (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: views
+        description: "Views (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: likes
+        description: "Likes (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: comments
+        description: "Comments (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: shares
+        description: "Shares (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: saved
+        description: "Saves (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: follows
+        description: "Follows driven by the media (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: reposts
+        description: "Reposts (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: profile_activity
+        description: "Profile actions driven by the media (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: profile_visits
+        description: "Profile visits driven by the media (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: total_interactions
+        description: "All interactions (lifetime)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_instagram__reach_by_follow_type_daily
+    description: "Instagram accounts reached per day, split by whether they follow the account."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, follow_type]
+    columns:
+      - name: reach_follow_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: follow_type
+        description: "follower or non_follower."
+        data_tests:
+          - not_null
+      - name: reach
+        description: "Accounts reached."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_instagram__views_by_media_type_daily
+    description: "Instagram views per day, split by where the media appears."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, media_product_type]
+    columns:
+      - name: views_media_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: media_product_type
+        description: "post, reel, story and so on."
+        data_tests:
+          - not_null
+      - name: views
+        description: "Views."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_instagram__user_reach_daily
+    description: "Instagram reach per day, plus trailing 28-day and weekly reach reported on that day (those two are not additive)."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: user_reach_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: reach
+        description: "Accounts reached on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: reach_days_28
+        description: "Accounts reached over the trailing 28 days."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: reach_week
+        description: "Accounts reached over the trailing week."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_instagram__profile_daily
+    description: "Instagram profile snapshot per day. Counts are totals at that day: average or take the latest, do not sum."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: profile_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['instagram']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: followers_count
+        description: "Followers at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: follows_count
+        description: "Accounts followed at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: media_count
+        description: "Posts published at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_linkedin__share_daily
+    description: "LinkedIn page post statistics per day."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: share_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['linkedin']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: impressions
+        description: "Times the page's posts were shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: unique_impressions
+        description: "Distinct members shown the posts (not additive across days)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on posts."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: likes
+        description: "Likes."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: comments
+        description: "Comments."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: shares
+        description: "Shares."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_linkedin__follower_gains_daily
+    description: "LinkedIn page follower gains per day, organic and paid."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: follower_gains_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['linkedin']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: organic_follower_gain
+        description: "Followers gained without paid promotion."
+        data_tests:
+          - not_null
+      - name: paid_follower_gain
+        description: "Followers gained through paid promotion."
+        data_tests:
+          - not_null
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_linkedin__follower_count_daily
+    description: "LinkedIn page follower total per snapshot day. Total at that day: take the latest, do not sum."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date]
+    columns:
+      - name: follower_count_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['linkedin']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: first_degree_size
+        description: "Total followers at the snapshot."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_googleads__performance_daily
+    description: "Google Ads performance per day, campaign, ad group and network (the finest campaign-level grain available)."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, network]
+    columns:
+      - name: performance_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: network
+        description: "Ad network."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Currency of the Google Ads account: the original currency of cost_micros and spend."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD', 'EUR', 'GBP', 'AUD']
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads. Platform-reported: not comparable with GA4 conversions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend
+        description: "Cost in the account currency (cost_micros divided by one million)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend_usd
+        description: "Cost converted to US dollars at the fixed test rate in the sl_currency_rates seed."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_googleads__ad_daily
+    description: "Google Ads performance per day, ad, device and network."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, ad_id, device, network]
+    columns:
+      - name: ad_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: ad_id
+        description: "Google Ads ad identifier."
+        data_tests:
+          - not_null
+      - name: device
+        description: "Device."
+        data_tests:
+          - not_null
+      - name: network
+        description: "Ad network."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Currency of the Google Ads account: the original currency of cost_micros and spend."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD', 'EUR', 'GBP', 'AUD']
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads. Platform-reported: not comparable with GA4 conversions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend
+        description: "Cost in the account currency (cost_micros divided by one million)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend_usd
+        description: "Cost converted to US dollars at the fixed test rate in the sl_currency_rates seed."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_googleads__keyword_daily
+    description: "Google Ads performance per day and keyword."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, criterion_id, keyword_text, match_type]
+    columns:
+      - name: keyword_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: criterion_id
+        description: "Keyword criterion identifier."
+        data_tests:
+          - not_null
+      - name: keyword_text
+        description: "Keyword text."
+        data_tests:
+          - not_null
+      - name: match_type
+        description: "Keyword match type."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Currency of the Google Ads account: the original currency of cost_micros and spend."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD', 'EUR', 'GBP', 'AUD']
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads. Platform-reported: not comparable with GA4 conversions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend
+        description: "Cost in the account currency (cost_micros divided by one million)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend_usd
+        description: "Cost converted to US dollars at the fixed test rate in the sl_currency_rates seed."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_googleads__search_term_daily
+    description: "Google Ads performance per day and search term."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, search_term, match_type]
+    columns:
+      - name: search_term_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: search_term
+        description: "What the user searched for."
+        data_tests:
+          - not_null
+      - name: match_type
+        description: "How the term matched."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Currency of the Google Ads account: the original currency of cost_micros and spend."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD', 'EUR', 'GBP', 'AUD']
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads. Platform-reported: not comparable with GA4 conversions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend
+        description: "Cost in the account currency (cost_micros divided by one million)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend_usd
+        description: "Cost converted to US dollars at the fixed test rate in the sl_currency_rates seed."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_googleads__device_daily
+    description: "Google Ads performance per day and device."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, device]
+    columns:
+      - name: device_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: device
+        description: "Device."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Currency of the Google Ads account: the original currency of cost_micros and spend."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD', 'EUR', 'GBP', 'AUD']
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads. Platform-reported: not comparable with GA4 conversions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend
+        description: "Cost in the account currency (cost_micros divided by one million)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend_usd
+        description: "Cost converted to US dollars at the fixed test rate in the sl_currency_rates seed."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_googleads__age_daily
+    description: "Google Ads performance per day and audience age band."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, age_range]
+    columns:
+      - name: age_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: age_range
+        description: "Age band."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Currency of the Google Ads account: the original currency of cost_micros and spend."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD', 'EUR', 'GBP', 'AUD']
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads. Platform-reported: not comparable with GA4 conversions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend
+        description: "Cost in the account currency (cost_micros divided by one million)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend_usd
+        description: "Cost converted to US dollars at the fixed test rate in the sl_currency_rates seed."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_googleads__gender_daily
+    description: "Google Ads performance per day and audience gender."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, gender]
+    columns:
+      - name: gender_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: gender
+        description: "Gender."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Currency of the Google Ads account: the original currency of cost_micros and spend."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD', 'EUR', 'GBP', 'AUD']
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads. Platform-reported: not comparable with GA4 conversions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend
+        description: "Cost in the account currency (cost_micros divided by one million)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend_usd
+        description: "Cost converted to US dollars at the fixed test rate in the sl_currency_rates seed."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null
+  - name: fct_googleads__location_daily
+    description: "Google Ads performance per day and location."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, connection_id, date, campaign_id, ad_group_id, country_criterion_id, location_type, geo_target_region, geo_target_city]
+    columns:
+      - name: location_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope for row-level security."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: customer_id
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: source_app_id
+        description: "Source application that produced the row (lineage only, never a tenant key)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - accepted_values:
+              arguments:
+                values: ['googleads']
+      - name: connection_id
+        description: "Source connection that delivered the row (one per account in a source app)."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_connection')
+                field: connection_id
+      - name: source_account_id
+        description: "Account inside the source app, for example a page, profile or ad account id."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: date
+        description: "Business date (calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: campaign_id
+        description: "Google Ads campaign identifier."
+        data_tests:
+          - not_null
+      - name: ad_group_id
+        description: "Google Ads ad group identifier."
+        data_tests:
+          - not_null
+      - name: country_criterion_id
+        description: "Country geo target id."
+        data_tests:
+          - not_null
+      - name: location_type
+        description: "Location type."
+        data_tests:
+          - not_null
+      - name: geo_target_region
+        description: "Region geo target."
+        data_tests:
+          - not_null
+      - name: geo_target_city
+        description: "City geo target."
+        data_tests:
+          - not_null
+      - name: currency
+        description: "Currency of the Google Ads account: the original currency of cost_micros and spend."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['USD', 'EUR', 'GBP', 'AUD']
+      - name: impressions
+        description: "Times the ad was shown."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: clicks
+        description: "Clicks on the ad."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: cost_micros
+        description: "Cost in millionths of the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions
+        description: "Conversions recorded by Google Ads. Platform-reported: not comparable with GA4 conversions."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: conversions_value
+        description: "Value of the conversions in the account currency."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend
+        description: "Cost in the account currency (cost_micros divided by one million)."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: spend_usd
+        description: "Cost converted to US dollars at the fixed test rate in the sl_currency_rates seed."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null

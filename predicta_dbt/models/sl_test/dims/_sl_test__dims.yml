@@ -128,12 +128,12 @@ models:
         data_tests:
           - not_null
       - name: source_app_id
-        description: "Source app: ga4, gsc or lighthouse."
+        description: "Source app: ga4, gsc, lighthouse, facebook, instagram, linkedin, googleads, metaads or linkedinads."
         data_tests:
           - not_null
           - accepted_values:
               arguments:
-                values: ['ga4', 'gsc', 'lighthouse']
+                values: ['ga4', 'gsc', 'lighthouse', 'facebook', 'instagram', 'linkedin', 'googleads', 'metaads', 'linkedinads']
       - name: source_account_id
         description: "Account in the source app."
         data_tests:

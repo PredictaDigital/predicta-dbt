@@ -1,0 +1,73 @@
+cubes:
+  - name: instagram_profile_daily
+    sql_table: sl_test.fct_instagram__profile_daily
+    public: false
+    description: "Instagram profile snapshot per day. Counts are totals at that day: average or take the latest, do not sum. Source cube: not queried directly, exposed through views."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+    dimensions:
+      - name: profile_daily_key
+        sql: profile_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+    measures:
+      - name: ig_followers_count
+        type: sum
+        sql: followers_count
+        description: "Followers at the snapshot."
+      - name: ig_follows_count
+        type: sum
+        sql: follows_count
+        description: "Accounts followed at the snapshot."
+      - name: ig_media_count
+        type: sum
+        sql: media_count
+        description: "Posts published at the snapshot."
+    pre_aggregations:
+      - name: instagram_profile_daily_daily
+        measures:
+          - CUBE.ig_followers_count
+          - CUBE.ig_follows_count
+          - CUBE.ig_media_count
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

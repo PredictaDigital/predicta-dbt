@@ -2,11 +2,11 @@
  "extra": {
   "ga4_pages_collapse": {
    "distinct_normalised_urls": 167,
-   "distinct_raw_paths": 630,
-   "fact_keys": 902,
-   "natural_keys": 1423
+   "distinct_raw_paths": 634,
+   "fact_keys": 942,
+   "natural_keys": 1467
   },
-  "ga4_traffic_raw_rows": 159,
+  "ga4_traffic_raw_rows": 189,
   "ga4_traffic_restated": [
    {
     "date": "2026-10-12",
@@ -25,33 +25,78 @@
      4
     ],
     "source": "google"
+   },
+   {
+    "date": "2026-10-13",
+    "latest_sessions": 16,
+    "medium": "(none)",
+    "other_sessions": [
+     4
+    ],
+    "source": "(direct)"
+   },
+   {
+    "date": "2026-10-13",
+    "latest_sessions": 13,
+    "medium": "(not set)",
+    "other_sessions": [
+     2
+    ],
+    "source": "(not set)"
+   },
+   {
+    "date": "2026-10-13",
+    "latest_sessions": 16,
+    "medium": "organic",
+    "other_sessions": [
+     4
+    ],
+    "source": "google"
+   },
+   {
+    "date": "2026-10-14",
+    "latest_sessions": 7,
+    "medium": "(none)",
+    "other_sessions": [
+     6
+    ],
+    "source": "(direct)"
+   },
+   {
+    "date": "2026-10-14",
+    "latest_sessions": 3,
+    "medium": "referral",
+    "other_sessions": [
+     2
+    ],
+    "source": "classifiedonlineads.net"
    }
   ]
  },
  "fact_rows": {
-  "fct_ga4__page_daily": 902,
-  "fct_ga4__traffic_daily": 152,
-  "fct_gsc__device_daily": 156,
-  "fct_gsc__page_daily": 1207,
-  "fct_gsc__query_daily": 4362,
-  "fct_gsc__site_daily": 210,
-  "fct_lighthouse__audit_daily": 196,
-  "fct_lighthouse__report_daily": 2
+  "fct_ga4__page_daily": 942,
+  "fct_ga4__traffic_daily": 158,
+  "fct_gsc__device_daily": 161,
+  "fct_gsc__page_daily": 1244,
+  "fct_gsc__query_daily": 4517,
+  "fct_gsc__site_daily": 216,
+  "fct_lighthouse__audit_daily": 392,
+  "fct_lighthouse__report_daily": 4
  },
  "meta": {
-  "generated_at": "2026-10-13T09:17:43+00:00",
+  "generated_at": "2026-10-14T12:50:35+00:00",
   "project_id": "proj_pa",
   "source": "s3://pa-poc-airbyte-data/airbyte/raw/airbyte_raw/"
  },
  "staging_rows": {
-  "stg_ga4__pages": 1423,
-  "stg_ga4__traffic_sources": 152,
-  "stg_gsc__search_by_date": 210,
-  "stg_gsc__search_by_device": 156,
-  "stg_gsc__search_by_page": 1207,
-  "stg_gsc__search_by_query": 4362,
-  "stg_lighthouse__audit": 196,
-  "stg_lighthouse__report": 2
+  "stg_ga4__pages": 1467,
+  "stg_ga4__traffic_sources": 158,
+  "stg_gsc__search_by_date": 216,
+  "stg_gsc__search_by_device": 161,
+  "stg_gsc__search_by_page": 1244,
+  "stg_gsc__search_by_query": 4517,
+  "stg_lighthouse__audit": 392,
+  "stg_lighthouse__report": 4
  },
  "totals_by_date": {
   "fct_ga4__page_daily": {
@@ -158,7 +203,10 @@
     "pageviews": 48.0
    },
    "2026-10-13": {
-    "pageviews": 66.0
+    "pageviews": 164.0
+   },
+   "2026-10-14": {
+    "pageviews": 124.0
    }
   },
   "fct_ga4__traffic_daily": {
@@ -435,12 +483,20 @@
     "total_users": 15.0
    },
    "2026-10-13": {
-    "engaged_sessions": 7.0,
-    "new_users": 1.0,
-    "pageviews": 66.0,
-    "session_duration_sec": 8297.522655,
-    "sessions": 12.0,
-    "total_users": 10.0
+    "engaged_sessions": 22.0,
+    "new_users": 9.0,
+    "pageviews": 164.0,
+    "session_duration_sec": 19295.34365,
+    "sessions": 48.0,
+    "total_users": 37.0
+   },
+   "2026-10-14": {
+    "engaged_sessions": 14.0,
+    "new_users": 4.0,
+    "pageviews": 124.0,
+    "session_duration_sec": 13749.737829,
+    "sessions": 26.0,
+    "total_users": 17.0
    }
   },
   "fct_gsc__device_daily": {
@@ -869,6 +925,18 @@
     "impressions": 485.0,
     "position_impressions": 485.0,
     "sum_position": 13843.0
+   },
+   "2026-10-11|image": {
+    "clicks": 1.0,
+    "impressions": 21.0,
+    "position_impressions": 21.0,
+    "sum_position": 561.0
+   },
+   "2026-10-11|web": {
+    "clicks": 4.0,
+    "impressions": 457.0,
+    "position_impressions": 457.0,
+    "sum_position": 13598.0
    }
   },
   "fct_gsc__page_daily": {
@@ -1297,6 +1365,18 @@
     "impressions": 518.0,
     "position_impressions": 518.0,
     "sum_position": 15423.0
+   },
+   "2026-10-11|image": {
+    "clicks": 1.0,
+    "impressions": 28.0,
+    "position_impressions": 28.0,
+    "sum_position": 685.0
+   },
+   "2026-10-11|web": {
+    "clicks": 4.0,
+    "impressions": 501.0,
+    "position_impressions": 501.0,
+    "sum_position": 13647.0
    }
   },
   "fct_gsc__query_daily": {
@@ -1725,6 +1805,18 @@
     "impressions": 459.0,
     "position_impressions": 459.0,
     "sum_position": 13537.0
+   },
+   "2026-10-11|image": {
+    "clicks": 1.0,
+    "impressions": 16.0,
+    "position_impressions": 16.0,
+    "sum_position": 396.0
+   },
+   "2026-10-11|web": {
+    "clicks": 2.0,
+    "impressions": 434.0,
+    "position_impressions": 434.0,
+    "sum_position": 13436.0
    }
   },
   "fct_gsc__site_daily": {
@@ -2987,6 +3079,42 @@
     "impressions": 485.0,
     "position_impressions": 485.0,
     "sum_position": 13843.0
+   },
+   "2026-10-11|discover": {
+    "clicks": 0.0,
+    "impressions": 0.0,
+    "position_impressions": 0.0,
+    "sum_position": 0.0
+   },
+   "2026-10-11|googleNews": {
+    "clicks": 0.0,
+    "impressions": 0.0,
+    "position_impressions": 0.0,
+    "sum_position": 0.0
+   },
+   "2026-10-11|image": {
+    "clicks": 1.0,
+    "impressions": 21.0,
+    "position_impressions": 21.0,
+    "sum_position": 561.0
+   },
+   "2026-10-11|news": {
+    "clicks": 0.0,
+    "impressions": 0.0,
+    "position_impressions": 0.0,
+    "sum_position": 0.0
+   },
+   "2026-10-11|video": {
+    "clicks": 0.0,
+    "impressions": 0.0,
+    "position_impressions": 0.0,
+    "sum_position": 0.0
+   },
+   "2026-10-11|web": {
+    "clicks": 4.0,
+    "impressions": 457.0,
+    "position_impressions": 457.0,
+    "sum_position": 13598.0
    }
   },
   "fct_lighthouse__audit_daily": {
@@ -3001,6 +3129,18 @@
     "audit_scored": 98.0,
     "audits": 98.0,
     "score": 86.61
+   },
+   "2026-10-14|desktop": {
+    "audit_failed": 13.0,
+    "audit_scored": 98.0,
+    "audits": 98.0,
+    "score": 89.23
+   },
+   "2026-10-14|mobile": {
+    "audit_failed": 16.0,
+    "audit_scored": 98.0,
+    "audits": 98.0,
+    "score": 86.79
    }
   },
   "fct_lighthouse__report_daily": {
@@ -3029,62 +3169,88 @@
     "speed_index_ms": 3400.0,
     "time_to_interactive_ms": 3300.0,
     "total_blocking_time_ms": 0.0
+   },
+   "2026-10-14|desktop": {
+    "accessibility_score": 95.0,
+    "best_practices_score": 100.0,
+    "cumulative_layout_shift": 0.017,
+    "first_contentful_paint_ms": 600.0,
+    "largest_contentful_paint_ms": 800.0,
+    "performance_score": 99.0,
+    "runs": 1.0,
+    "seo_score": 92.0,
+    "speed_index_ms": 1100.0,
+    "time_to_interactive_ms": 800.0,
+    "total_blocking_time_ms": 0.0
+   },
+   "2026-10-14|mobile": {
+    "accessibility_score": 91.0,
+    "best_practices_score": 100.0,
+    "cumulative_layout_shift": 0.087,
+    "first_contentful_paint_ms": 3000.0,
+    "largest_contentful_paint_ms": 3600.0,
+    "performance_score": 83.0,
+    "runs": 1.0,
+    "seo_score": 92.0,
+    "speed_index_ms": 3300.0,
+    "time_to_interactive_ms": 4300.0,
+    "total_blocking_time_ms": 0.0
    }
   }
  },
  "totals_project": {
   "fct_ga4__page_daily": {
-   "pageviews": 7448.0
+   "pageviews": 7670.0
   },
   "fct_ga4__traffic_daily": {
-   "engaged_sessions": 919.0,
-   "new_users": 598.0,
-   "pageviews": 7448.0,
-   "session_duration_sec": 1299661.442403,
-   "sessions": 1601.0,
-   "total_users": 1014.0
+   "engaged_sessions": 948.0,
+   "new_users": 610.0,
+   "pageviews": 7670.0,
+   "session_duration_sec": 1324409.001227,
+   "sessions": 1663.0,
+   "total_users": 1058.0
   },
   "fct_gsc__device_daily": {
-   "clicks": 143.0,
-   "impressions": 14109.0,
-   "position_impressions": 14109.0,
-   "sum_position": 455770.0
+   "clicks": 148.0,
+   "impressions": 14587.0,
+   "position_impressions": 14587.0,
+   "sum_position": 469929.0
   },
   "fct_gsc__page_daily": {
-   "clicks": 151.0,
-   "impressions": 15876.0,
-   "position_impressions": 15876.0,
-   "sum_position": 471294.0
+   "clicks": 156.0,
+   "impressions": 16405.0,
+   "position_impressions": 16405.0,
+   "sum_position": 485626.0
   },
   "fct_gsc__query_daily": {
-   "clicks": 101.0,
-   "impressions": 12233.0,
-   "position_impressions": 12233.0,
-   "sum_position": 417997.0
+   "clicks": 104.0,
+   "impressions": 12683.0,
+   "position_impressions": 12683.0,
+   "sum_position": 431829.0
   },
   "fct_gsc__site_daily": {
-   "clicks": 143.0,
-   "impressions": 14109.0,
-   "position_impressions": 14109.0,
-   "sum_position": 455770.0
+   "clicks": 148.0,
+   "impressions": 14587.0,
+   "position_impressions": 14587.0,
+   "sum_position": 469929.0
   },
   "fct_lighthouse__audit_daily": {
-   "audit_failed": 30.0,
-   "audit_scored": 196.0,
-   "audits": 196.0,
-   "score": 174.98
+   "audit_failed": 59.0,
+   "audit_scored": 392.0,
+   "audits": 392.0,
+   "score": 351.0
   },
   "fct_lighthouse__report_daily": {
-   "accessibility_score": 186.0,
-   "best_practices_score": 200.0,
-   "cumulative_layout_shift": 0.103,
-   "first_contentful_paint_ms": 3400.0,
-   "largest_contentful_paint_ms": 4300.0,
-   "performance_score": 178.0,
-   "runs": 2.0,
-   "seo_score": 184.0,
-   "speed_index_ms": 5900.0,
-   "time_to_interactive_ms": 4300.0,
+   "accessibility_score": 372.0,
+   "best_practices_score": 400.0,
+   "cumulative_layout_shift": 0.207,
+   "first_contentful_paint_ms": 7000.0,
+   "largest_contentful_paint_ms": 8700.0,
+   "performance_score": 360.0,
+   "runs": 4.0,
+   "seo_score": 368.0,
+   "speed_index_ms": 10300.0,
+   "time_to_interactive_ms": 9400.0,
    "total_blocking_time_ms": 0.0
   }
  }

@@ -2,3 +2,9 @@ connection_id,customer_id,project_id,source_app_id,source_account_id,connection_
 conn_pa_ga4,cust_predicta,proj_pa,ga4,539902445,GA4 property 539902445
 conn_pa_gsc,cust_predicta,proj_pa,gsc,sc-domain:predictaanalytics.io,Search Console predictaanalytics.io
 conn_pa_lighthouse,cust_predicta,proj_pa,lighthouse,2,Lighthouse predictaanalytics.io
+conn_pa_facebook,cust_predicta,proj_pa,facebook,609888765552288,Facebook page Predicta Analytics
+conn_pa_instagram,cust_predicta,proj_pa,instagram,17841475543010731,Instagram account predictaanalytics
+conn_pa_linkedin,cust_predicta,proj_pa,linkedin,106752101,LinkedIn page Predicta Analytics
+conn_pa_googleads,cust_predicta,proj_pa,googleads,6447932152,Google Ads account Predicta Analytics
+conn_pa_metaads,cust_predicta,proj_pa,metaads,1194294342541510,Meta Ads account Predicta Analytics
+conn_pa_linkedinads,cust_predicta,proj_pa,linkedinads,516029067,LinkedIn Ads account Predicta Analytics

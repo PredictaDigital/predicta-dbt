@@ -1,0 +1,36 @@
+cubes:
+  - name: dim_googleads_campaign
+    sql_table: sl_test.dim_googleads_campaign
+    public: false
+    description: "Google Ads campaigns with type and status."
+    dimensions:
+      - name: dim_key
+        sql: concat(project_id, '|', connection_id, '|', campaign_id)
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the campaign belongs to."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Connection that delivered the campaign."
+      - name: campaign_id
+        sql: campaign_id
+        type: string
+        description: "Google Ads campaign identifier."
+      - name: campaign_name
+        sql: campaign_name
+        type: string
+        description: "Name of the campaign."
+      - name: campaign_status
+        sql: campaign_status
+        type: string
+        description: "ENABLED, PAUSED or REMOVED."
+      - name: channel_type
+        sql: channel_type
+        type: string
+        description: "Campaign type, for example SEARCH."
