@@ -6,8 +6,8 @@
     comparable across sources is never named with a bare generic word such as sessions or clicks.
     Returns one row per violation; zero rows means all rules hold. -#}
 
-{%- set marts = ['mart_seo__search_daily', 'mart_ppc__campaign_daily', 'mart_dm__channel_daily'] -%}
-{%- set not_measures = ['campaign_key', 'page_key', 'search_daily_key', 'campaign_daily_key', 'channel_daily_key'] -%}
+{%- set marts = ['mart_seo__search_daily', 'mart_ppc__campaign_daily', 'mart_dm__channel_daily', 'mart_smm__social_daily'] -%}
+{%- set not_measures = ['campaign_key', 'page_key', 'search_daily_key', 'campaign_daily_key', 'channel_daily_key', 'social_daily_key'] -%}
 {%- set generic = ['sessions', 'clicks', 'impressions', 'conversions', 'users', 'views', 'spend'] -%}
 
 {% set measure_rows = [] %}
@@ -28,6 +28,11 @@ from (
     {% if m == 'mart_dm__channel_daily' %}
     select 'digital marketing measure without a source qualifier', '{{ m }}', '{{ c }}'
     where not (startsWith('{{ c }}', 'ga4_') or startsWith('{{ c }}', 'gsc_') or startsWith('{{ c }}', 'ppc_') or startsWith('{{ c }}', 'platform_'))
+    union all
+    {% endif %}
+    {% if m == 'mart_smm__social_daily' %}
+    select 'social measure without a platform qualifier', '{{ m }}', '{{ c }}'
+    where not (startsWith('{{ c }}', 'fb_') or startsWith('{{ c }}', 'ig_') or startsWith('{{ c }}', 'li_'))
     union all
     {% endif %}
     {% endfor %}

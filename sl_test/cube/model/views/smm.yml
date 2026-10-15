@@ -1,0 +1,42 @@
+views:
+  - name: smm
+    description: "Social media domain view: Facebook, Instagram and LinkedIn per day and platform with each platform's own views, engagement and follower gains. Measures from different platforms are never added together."
+    cubes:
+      - join_path: smm_social_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - platform
+          - fb_page_views
+          - fb_media_views
+          - fb_post_engagements
+          - fb_new_follows
+          - ig_views
+          - ig_likes
+          - ig_comments
+          - ig_shares
+          - ig_saves
+          - ig_total_interactions
+          - ig_profile_views
+          - ig_website_clicks
+          - li_impressions
+          - li_clicks
+          - li_likes
+          - li_comments
+          - li_shares
+          - li_organic_follower_gain
+          - li_paid_follower_gain
+          - ig_interactions_per_view
+          - li_click_rate
+          - fb_engagements_per_page_view
+      - join_path: smm_social_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: smm_social_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

@@ -297,3 +297,181 @@ models:
         description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
         data_tests:
           - not_null
+  - name: mart_smm__social_daily
+    description: "Social media overview per day and platform (Facebook, Instagram, LinkedIn). Built by UNION ALL of the platform facts at this grain; each platform fills only its own source-qualified columns. No column adds measures from different platforms. Only flow measures that can be summed over days are included. Widgets read it through the smm view."
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [project_id, date, platform]
+    columns:
+      - name: social_daily_key
+        description: "Surrogate key of the grain. Unique per row."
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer that owns the project. Access scope."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+      - name: project_id
+        description: "Project the data belongs to. The isolation boundary: every query is filtered on it."
+        data_tests:
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              arguments:
+                to: ref('dim_project')
+                field: project_id
+      - name: date
+        description: "Business date (UTC calendar day)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('sl_dim_date')
+                field: date
+      - name: platform
+        description: "Social platform the row belongs to: facebook, instagram or linkedin."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['facebook', 'instagram', 'linkedin']
+      - name: fb_page_views
+        description: "Times the Facebook page was viewed on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: fb_media_views
+        description: "Times Facebook page content was viewed on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: fb_post_engagements
+        description: "Reactions, comments, shares and clicks on Facebook posts on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: fb_new_follows
+        description: "New follows of the Facebook page on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ig_views
+        description: "Times Instagram content was viewed on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ig_likes
+        description: "Likes on Instagram content on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ig_comments
+        description: "Comments on Instagram content on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ig_shares
+        description: "Shares of Instagram content on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ig_saves
+        description: "Saves of Instagram content on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ig_total_interactions
+        description: "All interactions with Instagram content on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ig_profile_views
+        description: "Times the Instagram profile was viewed on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ig_website_clicks
+        description: "Taps on the website link of the Instagram profile on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: li_impressions
+        description: "Times LinkedIn page posts were shown on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: li_clicks
+        description: "Clicks on LinkedIn page posts on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: li_likes
+        description: "Likes on LinkedIn page posts on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: li_comments
+        description: "Comments on LinkedIn page posts on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: li_shares
+        description: "Shares of LinkedIn page posts on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: li_organic_follower_gain
+        description: "LinkedIn followers gained without paid promotion on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: -1000000000
+      - name: li_paid_follower_gain
+        description: "LinkedIn followers gained through paid promotion on the day."
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: -1000000000
+      - name: _loaded_at
+        description: "Time the row was loaded into ClickHouse; drives the incremental watermark."
+        data_tests:
+          - not_null

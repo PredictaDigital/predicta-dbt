@@ -1,0 +1,164 @@
+cubes:
+  - name: smm_social_daily
+    sql_table: sl_test.mart_smm__social_daily
+    public: false
+    description: "Social media domain mart: Facebook, Instagram and LinkedIn side by side per day and platform, in platform-qualified measures."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+    dimensions:
+      - name: social_daily_key
+        sql: social_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: platform
+        sql: platform
+        type: string
+        description: "Social platform the row belongs to: facebook, instagram or linkedin."
+    measures:
+      - name: fb_page_views
+        type: sum
+        sql: fb_page_views
+        description: "Times the Facebook page was viewed on the day. Counted by that platform only; not comparable with other platforms."
+      - name: fb_media_views
+        type: sum
+        sql: fb_media_views
+        description: "Times Facebook page content was viewed on the day. Counted by that platform only; not comparable with other platforms."
+      - name: fb_post_engagements
+        type: sum
+        sql: fb_post_engagements
+        description: "Reactions, comments, shares and clicks on Facebook posts on the day. Counted by that platform only; not comparable with other platforms."
+      - name: fb_new_follows
+        type: sum
+        sql: fb_new_follows
+        description: "New follows of the Facebook page on the day. Counted by that platform only; not comparable with other platforms."
+      - name: ig_views
+        type: sum
+        sql: ig_views
+        description: "Times Instagram content was viewed on the day. Counted by that platform only; not comparable with other platforms."
+      - name: ig_likes
+        type: sum
+        sql: ig_likes
+        description: "Likes on Instagram content on the day. Counted by that platform only; not comparable with other platforms."
+      - name: ig_comments
+        type: sum
+        sql: ig_comments
+        description: "Comments on Instagram content on the day. Counted by that platform only; not comparable with other platforms."
+      - name: ig_shares
+        type: sum
+        sql: ig_shares
+        description: "Shares of Instagram content on the day. Counted by that platform only; not comparable with other platforms."
+      - name: ig_saves
+        type: sum
+        sql: ig_saves
+        description: "Saves of Instagram content on the day. Counted by that platform only; not comparable with other platforms."
+      - name: ig_total_interactions
+        type: sum
+        sql: ig_total_interactions
+        description: "All interactions with Instagram content on the day. Counted by that platform only; not comparable with other platforms."
+      - name: ig_profile_views
+        type: sum
+        sql: ig_profile_views
+        description: "Times the Instagram profile was viewed on the day. Counted by that platform only; not comparable with other platforms."
+      - name: ig_website_clicks
+        type: sum
+        sql: ig_website_clicks
+        description: "Taps on the website link of the Instagram profile on the day. Counted by that platform only; not comparable with other platforms."
+      - name: li_impressions
+        type: sum
+        sql: li_impressions
+        description: "Times LinkedIn page posts were shown on the day. Counted by that platform only; not comparable with other platforms."
+      - name: li_clicks
+        type: sum
+        sql: li_clicks
+        description: "Clicks on LinkedIn page posts on the day. Counted by that platform only; not comparable with other platforms."
+      - name: li_likes
+        type: sum
+        sql: li_likes
+        description: "Likes on LinkedIn page posts on the day. Counted by that platform only; not comparable with other platforms."
+      - name: li_comments
+        type: sum
+        sql: li_comments
+        description: "Comments on LinkedIn page posts on the day. Counted by that platform only; not comparable with other platforms."
+      - name: li_shares
+        type: sum
+        sql: li_shares
+        description: "Shares of LinkedIn page posts on the day. Counted by that platform only; not comparable with other platforms."
+      - name: li_organic_follower_gain
+        type: sum
+        sql: li_organic_follower_gain
+        description: "LinkedIn followers gained without paid promotion on the day. Counted by that platform only; not comparable with other platforms."
+      - name: li_paid_follower_gain
+        type: sum
+        sql: li_paid_follower_gain
+        description: "LinkedIn followers gained through paid promotion on the day. Counted by that platform only; not comparable with other platforms."
+      - name: ig_interactions_per_view
+        type: number
+        sql: "{ig_total_interactions} / NULLIF({ig_views}, 0)"
+        description: "Instagram interactions per view of Instagram content."
+      - name: li_click_rate
+        type: number
+        sql: "{li_clicks} / NULLIF({li_impressions}, 0)"
+        description: "Share of LinkedIn post impressions that led to a click."
+        format: percent
+      - name: fb_engagements_per_page_view
+        type: number
+        sql: "{fb_post_engagements} / NULLIF({fb_page_views}, 0)"
+        description: "Facebook post engagements per page view."
+    pre_aggregations:
+      - name: smm_social_daily_daily
+        measures:
+          - CUBE.fb_page_views
+          - CUBE.fb_media_views
+          - CUBE.fb_post_engagements
+          - CUBE.fb_new_follows
+          - CUBE.ig_views
+          - CUBE.ig_likes
+          - CUBE.ig_comments
+          - CUBE.ig_shares
+          - CUBE.ig_saves
+          - CUBE.ig_total_interactions
+          - CUBE.ig_profile_views
+          - CUBE.ig_website_clicks
+          - CUBE.li_impressions
+          - CUBE.li_clicks
+          - CUBE.li_likes
+          - CUBE.li_comments
+          - CUBE.li_shares
+          - CUBE.li_organic_follower_gain
+          - CUBE.li_paid_follower_gain
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+          - CUBE.platform
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

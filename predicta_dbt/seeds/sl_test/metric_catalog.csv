@@ -16,3 +16,22 @@ mart_dm__channel_daily,ppc_impressions,ppc_impressions,digital_marketing,Times a
 mart_dm__channel_daily,ppc_clicks,ppc_clicks,digital_marketing,Clicks on ads on any paid platform,count,googleads,true
 mart_dm__channel_daily,ppc_spend_usd,ppc_spend_usd,digital_marketing,Cost converted to US dollars at the fixed test rate,USD,googleads,true
 mart_dm__channel_daily,platform_conversions,platform_conversions,digital_marketing,Conversions as each ad platform reports them; not comparable with GA4 or other platforms,count,googleads,false
+mart_smm__social_daily,fb_page_views,fb_page_views,smm,Times the Facebook page was viewed on the day,count,facebook,false
+mart_smm__social_daily,fb_media_views,fb_media_views,smm,Times Facebook page content was viewed on the day,count,facebook,false
+mart_smm__social_daily,fb_post_engagements,fb_post_engagements,smm,Reactions; comments; shares and clicks on Facebook posts,count,facebook,false
+mart_smm__social_daily,fb_new_follows,fb_new_follows,smm,New follows of the Facebook page on the day,count,facebook,false
+mart_smm__social_daily,ig_views,ig_views,smm,Times Instagram content was viewed on the day,count,instagram,false
+mart_smm__social_daily,ig_likes,ig_likes,smm,Likes on Instagram content on the day,count,instagram,false
+mart_smm__social_daily,ig_comments,ig_comments,smm,Comments on Instagram content on the day,count,instagram,false
+mart_smm__social_daily,ig_shares,ig_shares,smm,Shares of Instagram content on the day,count,instagram,false
+mart_smm__social_daily,ig_saves,ig_saves,smm,Saves of Instagram content on the day,count,instagram,false
+mart_smm__social_daily,ig_total_interactions,ig_total_interactions,smm,All interactions with Instagram content on the day,count,instagram,false
+mart_smm__social_daily,ig_profile_views,ig_profile_views,smm,Times the Instagram profile was viewed on the day,count,instagram,false
+mart_smm__social_daily,ig_website_clicks,ig_website_clicks,smm,Taps on the website link of the Instagram profile,count,instagram,false
+mart_smm__social_daily,li_impressions,li_impressions,smm,Times LinkedIn page posts were shown on the day,count,linkedin,false
+mart_smm__social_daily,li_clicks,li_clicks,smm,Clicks on LinkedIn page posts on the day,count,linkedin,false
+mart_smm__social_daily,li_likes,li_likes,smm,Likes on LinkedIn page posts on the day,count,linkedin,false
+mart_smm__social_daily,li_comments,li_comments,smm,Comments on LinkedIn page posts on the day,count,linkedin,false
+mart_smm__social_daily,li_shares,li_shares,smm,Shares of LinkedIn page posts on the day,count,linkedin,false
+mart_smm__social_daily,li_organic_follower_gain,li_organic_follower_gain,smm,LinkedIn followers gained without paid promotion on the day,count,linkedin,false
+mart_smm__social_daily,li_paid_follower_gain,li_paid_follower_gain,smm,LinkedIn followers gained through paid promotion on the day,count,linkedin,false

@@ -21,5 +21,12 @@ from (
     union all select 'dm ppc_clicks', toFloat64((select sum(ppc_clicks) from {{ ref('mart_dm__channel_daily') }})), toFloat64((select sum(clicks) from {{ ref('mart_ppc__campaign_daily') }}))
     union all select 'dm ppc_impressions', toFloat64((select sum(ppc_impressions) from {{ ref('mart_dm__channel_daily') }})), toFloat64((select sum(impressions) from {{ ref('mart_ppc__campaign_daily') }}))
     union all select 'dm platform_conversions', toFloat64((select sum(platform_conversions) from {{ ref('mart_dm__channel_daily') }})), toFloat64((select sum(platform_conversions) from {{ ref('mart_ppc__campaign_daily') }}))
+    union all select 'smm fb_page_views', toFloat64((select sum(fb_page_views) from {{ ref('mart_smm__social_daily') }})), toFloat64((select sum(page_views_total) from {{ ref('fct_facebook__page_insights_daily') }}))
+    union all select 'smm fb_post_engagements', toFloat64((select sum(fb_post_engagements) from {{ ref('mart_smm__social_daily') }})), toFloat64((select sum(page_post_engagements) from {{ ref('fct_facebook__page_insights_daily') }}))
+    union all select 'smm ig_views', toFloat64((select sum(ig_views) from {{ ref('mart_smm__social_daily') }})), toFloat64((select sum(views) from {{ ref('fct_instagram__account_daily') }}))
+    union all select 'smm ig_total_interactions', toFloat64((select sum(ig_total_interactions) from {{ ref('mart_smm__social_daily') }})), toFloat64((select sum(total_interactions) from {{ ref('fct_instagram__account_daily') }}))
+    union all select 'smm li_impressions', toFloat64((select sum(li_impressions) from {{ ref('mart_smm__social_daily') }})), toFloat64((select sum(impressions) from {{ ref('fct_linkedin__share_daily') }}))
+    union all select 'smm li_clicks', toFloat64((select sum(li_clicks) from {{ ref('mart_smm__social_daily') }})), toFloat64((select sum(clicks) from {{ ref('fct_linkedin__share_daily') }}))
+    union all select 'smm li_organic_follower_gain', toFloat64((select sum(li_organic_follower_gain) from {{ ref('mart_smm__social_daily') }})), toFloat64((select sum(organic_follower_gain) from {{ ref('fct_linkedin__follower_gains_daily') }}))
 )
 where abs(mart_total - fact_total) > 0.01
