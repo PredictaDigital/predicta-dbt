@@ -1,0 +1,20 @@
+cubes:
+  - name: dim_country
+    sql_table: sl_test.dim_country
+    public: false
+    description: "Countries seen in Search Console reports, as three-letter codes."
+    dimensions:
+      - name: dim_key
+        sql: country
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: country
+        sql: country
+        type: string
+        description: "Country as a lower-case three-letter code."
+      - name: country_label
+        sql: country_label
+        type: string
+        description: "Country code in upper case, for display."

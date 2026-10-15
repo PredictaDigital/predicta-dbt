@@ -1,0 +1,44 @@
+views:
+  - name: ppc_google_ads_keywords
+    description: "Google Ads performance per day and keyword: impressions, clicks, cost in the account currency and US dollars, and platform-reported conversions."
+    cubes:
+      - join_path: googleads_keyword_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - campaign_id
+          - ad_group_id
+          - criterion_id
+          - keyword_text
+          - match_type
+          - currency
+          - ppc_impressions
+          - ppc_clicks
+          - platform_conversions
+          - platform_conversion_value
+          - ppc_spend_original
+          - ppc_spend_usd
+          - ppc_ctr
+          - ppc_cpc_usd
+          - ppc_cost_per_conversion_usd
+      - join_path: googleads_keyword_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: googleads_keyword_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend
+      - join_path: googleads_keyword_daily.dim_googleads_campaign
+        includes:
+          - campaign_name
+          - campaign_status
+          - channel_type
+      - join_path: googleads_keyword_daily.dim_googleads_ad_group
+        includes:
+          - ad_group_name
+          - ad_group_status

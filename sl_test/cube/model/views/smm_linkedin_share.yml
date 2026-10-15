@@ -1,0 +1,27 @@
+views:
+  - name: smm_linkedin_share
+    description: "LinkedIn page post statistics per day: impressions, clicks, likes, comments and shares."
+    cubes:
+      - join_path: linkedin_share_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - li_impressions
+          - li_unique_impressions
+          - li_clicks
+          - li_likes
+          - li_comments
+          - li_shares
+          - li_click_rate
+      - join_path: linkedin_share_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: linkedin_share_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

@@ -1,0 +1,36 @@
+cubes:
+  - name: dim_instagram_media
+    sql_table: sl_test.dim_instagram_media
+    public: false
+    description: "Instagram media items with caption, type and link."
+    dimensions:
+      - name: dim_key
+        sql: concat(project_id, '|', toString(media_key))
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the media belongs to."
+      - name: caption
+        sql: caption
+        type: string
+        description: "Caption of the post, first 300 characters."
+      - name: media_type
+        sql: media_type
+        type: string
+        description: "IMAGE, VIDEO or CAROUSEL_ALBUM."
+      - name: media_product_type
+        sql: media_product_type
+        type: string
+        description: "Where the media appears: FEED, REELS or STORY."
+      - name: permalink
+        sql: permalink
+        type: string
+        description: "Link to the post on Instagram."
+      - name: posted_date
+        sql: posted_date
+        type: time
+        description: "Day the media was posted."

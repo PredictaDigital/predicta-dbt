@@ -1,0 +1,35 @@
+views:
+  - name: smm_facebook_posts
+    description: "Facebook post insights per post as lifetime totals at each snapshot day. Filter to the latest date for current totals."
+    cubes:
+      - join_path: facebook_post_insights_snapshot
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - fb_post_media_view
+          - fb_post_total_media_view_unique
+          - fb_post_clicks
+          - fb_post_video_views
+          - fb_post_video_views_unique
+          - fb_post_video_complete_views_30s
+          - fb_post_clicks_by_type
+          - fb_post_activity_by_action_type
+          - fb_post_reactions_by_type_total
+      - join_path: facebook_post_insights_snapshot.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: facebook_post_insights_snapshot.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend
+      - join_path: facebook_post_insights_snapshot.dim_facebook_post
+        includes:
+          - created_date
+          - message
+          - status_type
+          - permalink_url

@@ -1,0 +1,115 @@
+cubes:
+  - name: dm_channel_daily
+    sql_table: sl_test.mart_dm__channel_daily
+    public: false
+    description: "Digital marketing domain mart: GA4, Search Console and paid advertising side by side per day and channel group."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+    dimensions:
+      - name: channel_daily_key
+        sql: channel_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: channel_group
+        sql: channel_group
+        type: string
+        description: "Marketing channel group, for example Organic Search, Direct or Paid Search."
+    measures:
+      - name: ga4_sessions
+        type: sum
+        sql: ga4_sessions
+        description: "Sessions started on the website as GA4 counts them. Not comparable with Search Console clicks."
+      - name: ga4_engaged_sessions
+        type: sum
+        sql: ga4_engaged_sessions
+        description: "GA4 sessions that were engaged, derived from the bounce rate."
+      - name: gsc_clicks
+        type: sum
+        sql: gsc_clicks
+        description: "Clicks from Google Search as Search Console counts them. Not comparable with GA4 sessions."
+      - name: gsc_impressions
+        type: sum
+        sql: gsc_impressions
+        description: "Times the site appeared in Google Search results."
+      - name: ppc_impressions
+        type: sum
+        sql: ppc_impressions
+        description: "Times an ad was shown on any paid platform."
+      - name: ppc_clicks
+        type: sum
+        sql: ppc_clicks
+        description: "Clicks on ads on any paid platform."
+      - name: ppc_spend_usd
+        type: sum
+        sql: ppc_spend_usd
+        description: "Paid advertising cost in US dollars at the fixed test rate."
+      - name: platform_conversions
+        type: sum
+        sql: platform_conversions
+        description: "Conversions as the ad platforms report them. Not comparable with GA4."
+      - name: ga4_engagement_rate
+        type: number
+        sql: "{ga4_engaged_sessions} / NULLIF({ga4_sessions}, 0)"
+        description: "Share of GA4 sessions that were engaged."
+        format: percent
+      - name: gsc_ctr
+        type: number
+        sql: "{gsc_clicks} / NULLIF({gsc_impressions}, 0)"
+        description: "Search Console click-through rate for the channel group."
+        format: percent
+      - name: ppc_ctr
+        type: number
+        sql: "{ppc_clicks} / NULLIF({ppc_impressions}, 0)"
+        description: "Click-through rate of the paid ads."
+        format: percent
+      - name: ppc_cpc_usd
+        type: number
+        sql: "{ppc_spend_usd} / NULLIF({ppc_clicks}, 0)"
+        description: "Average cost per paid click in US dollars."
+    pre_aggregations:
+      - name: dm_channel_daily_daily
+        measures:
+          - CUBE.ga4_sessions
+          - CUBE.ga4_engaged_sessions
+          - CUBE.gsc_clicks
+          - CUBE.gsc_impressions
+          - CUBE.ppc_impressions
+          - CUBE.ppc_clicks
+          - CUBE.ppc_spend_usd
+          - CUBE.platform_conversions
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+          - CUBE.channel_group
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

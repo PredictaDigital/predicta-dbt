@@ -1,0 +1,22 @@
+views:
+  - name: smm_facebook_page
+    description: "Facebook page audience per day: fans and followers at each daily snapshot."
+    cubes:
+      - join_path: facebook_page_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - fb_fan_count
+          - fb_followers_count
+      - join_path: facebook_page_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: facebook_page_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

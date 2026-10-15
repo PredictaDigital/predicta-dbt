@@ -1,0 +1,119 @@
+cubes:
+  - name: seo_search_daily
+    sql_table: sl_test.mart_seo__search_daily
+    public: false
+    description: "SEO domain mart: Search Console search performance per day, page, search type, country and device."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_page
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_page}.project_id AND {CUBE}.page_key = {dim_page}.page_key"
+      - name: dim_country
+        relationship: many_to_one
+        sql: "{CUBE}.country = {dim_country}.country"
+      - name: dim_device
+        relationship: many_to_one
+        sql: "{CUBE}.device = {dim_device}.device"
+    dimensions:
+      - name: search_daily_key
+        sql: search_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: page_key
+        sql: toString(page_key)
+        type: string
+        description: "Key of the normalised page URL."
+        public: false
+      - name: search_type
+        sql: search_type
+        type: string
+        description: "Search Console search type: web, image, news, discover, googleNews or video."
+      - name: country
+        sql: country
+        type: string
+        description: "Country the search came from, as a lower-case three-letter code."
+      - name: device
+        sql: device
+        type: string
+        description: "Device the search was made on: desktop, mobile or tablet."
+    measures:
+      - name: gsc_clicks
+        type: sum
+        sql: clicks
+        description: "Clicks from Google Search to the site, as Search Console counts them. Not comparable with GA4 sessions."
+      - name: gsc_impressions
+        type: sum
+        sql: impressions
+        description: "Times the site appeared in Google Search results."
+      - name: gsc_sum_position
+        type: sum
+        sql: sum_position
+        description: "Position multiplied by impressions; numerator of average position."
+        public: false
+      - name: gsc_position_impressions
+        type: sum
+        sql: position_impressions
+        description: "Impressions that carry a position; denominator of average position."
+        public: false
+      - name: gsc_ctr
+        type: number
+        sql: "{gsc_clicks} / NULLIF({gsc_impressions}, 0)"
+        description: "Click-through rate: Search Console clicks divided by impressions."
+        format: percent
+      - name: gsc_avg_position
+        type: number
+        sql: "{gsc_sum_position} / NULLIF({gsc_position_impressions}, 0)"
+        description: "Average Google Search position, weighted by impressions. Lower is better."
+    pre_aggregations:
+      - name: seo_search_daily_daily
+        measures:
+          - CUBE.gsc_clicks
+          - CUBE.gsc_impressions
+          - CUBE.gsc_sum_position
+          - CUBE.gsc_position_impressions
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+          - CUBE.search_type
+          - CUBE.country
+          - CUBE.device
+          - dim_page.page_url
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

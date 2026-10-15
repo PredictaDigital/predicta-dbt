@@ -1,0 +1,23 @@
+views:
+  - name: smm_instagram_profile
+    description: "Instagram profile snapshot per day: followers, accounts followed and posts published."
+    cubes:
+      - join_path: instagram_profile_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - ig_followers_count
+          - ig_follows_count
+          - ig_media_count
+      - join_path: instagram_profile_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: instagram_profile_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

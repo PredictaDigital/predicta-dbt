@@ -1,0 +1,21 @@
+views:
+  - name: smm_linkedin_followers
+    description: "LinkedIn page follower total per snapshot day."
+    cubes:
+      - join_path: linkedin_follower_count_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - li_first_degree_size
+      - join_path: linkedin_follower_count_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: linkedin_follower_count_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

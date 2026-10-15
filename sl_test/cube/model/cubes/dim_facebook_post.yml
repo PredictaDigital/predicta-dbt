@@ -1,0 +1,32 @@
+cubes:
+  - name: dim_facebook_post
+    sql_table: sl_test.dim_facebook_post
+    public: false
+    description: "Facebook posts with text, type and link."
+    dimensions:
+      - name: dim_key
+        sql: concat(project_id, '|', toString(post_key))
+        type: string
+        description: "Primary key of the dimension row."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the post belongs to."
+      - name: created_date
+        sql: created_date
+        type: time
+        description: "Day the post was created."
+      - name: message
+        sql: message
+        type: string
+        description: "Post text, first 500 characters."
+      - name: status_type
+        sql: status_type
+        type: string
+        description: "Kind of post, for example added_photos."
+      - name: permalink_url
+        sql: permalink_url
+        type: string
+        description: "Link to the post on Facebook."

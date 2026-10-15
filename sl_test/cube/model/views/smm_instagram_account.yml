@@ -1,0 +1,33 @@
+views:
+  - name: smm_instagram_account
+    description: "Instagram account insights per day: reach, views, interactions and profile activity."
+    cubes:
+      - join_path: instagram_account_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - ig_reach
+          - ig_views
+          - ig_likes
+          - ig_comments
+          - ig_saves
+          - ig_shares
+          - ig_reposts
+          - ig_replies
+          - ig_profile_views
+          - ig_accounts_engaged
+          - ig_website_clicks
+          - ig_profile_links_taps
+          - ig_total_interactions
+      - join_path: instagram_account_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: instagram_account_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

@@ -1,0 +1,123 @@
+cubes:
+  - name: instagram_account_daily
+    sql_table: sl_test.fct_instagram__account_daily
+    public: false
+    description: "Instagram account insights per day, one column per metric. Reach and accounts engaged count people and cannot be added across days. Source cube: not queried directly, exposed through views."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+    dimensions:
+      - name: account_daily_key
+        sql: account_daily_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+    measures:
+      - name: ig_reach
+        type: sum
+        sql: reach
+        description: "Accounts reached (not additive across days)."
+      - name: ig_views
+        type: sum
+        sql: views
+        description: "Times content was viewed."
+      - name: ig_likes
+        type: sum
+        sql: likes
+        description: "Likes received on the content."
+      - name: ig_comments
+        type: sum
+        sql: comments
+        description: "Comments received on the content."
+      - name: ig_saves
+        type: sum
+        sql: saves
+        description: "Number of saves."
+      - name: ig_shares
+        type: sum
+        sql: shares
+        description: "Number of shares."
+      - name: ig_reposts
+        type: sum
+        sql: reposts
+        description: "Number of reposts."
+      - name: ig_replies
+        type: sum
+        sql: replies
+        description: "Replies to stories."
+      - name: ig_profile_views
+        type: sum
+        sql: profile_views
+        description: "Times the profile was viewed."
+      - name: ig_accounts_engaged
+        type: sum
+        sql: accounts_engaged
+        description: "Accounts that interacted (not additive across days)."
+      - name: ig_website_clicks
+        type: sum
+        sql: website_clicks
+        description: "Taps on the website link."
+      - name: ig_profile_links_taps
+        type: sum
+        sql: profile_links_taps
+        description: "Taps on profile links."
+      - name: ig_total_interactions
+        type: sum
+        sql: total_interactions
+        description: "All interactions with the content."
+    pre_aggregations:
+      - name: instagram_account_daily_daily
+        measures:
+          - CUBE.ig_reach
+          - CUBE.ig_views
+          - CUBE.ig_likes
+          - CUBE.ig_comments
+          - CUBE.ig_saves
+          - CUBE.ig_shares
+          - CUBE.ig_reposts
+          - CUBE.ig_replies
+          - CUBE.ig_profile_views
+          - CUBE.ig_accounts_engaged
+          - CUBE.ig_website_clicks
+          - CUBE.ig_profile_links_taps
+          - CUBE.ig_total_interactions
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

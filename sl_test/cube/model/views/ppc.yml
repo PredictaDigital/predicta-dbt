@@ -1,0 +1,39 @@
+views:
+  - name: ppc
+    description: "Paid advertising domain view: impressions, clicks, spend in original currency and US dollars, click-through rate, cost per click and platform-reported conversions per campaign and day."
+    cubes:
+      - join_path: ppc_campaign_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - campaign_id
+          - currency
+          - source_app_id
+          - ppc_impressions
+          - ppc_clicks
+          - ppc_spend_original
+          - ppc_spend_usd
+          - platform_conversions
+          - ppc_ctr
+          - ppc_cpc_usd
+          - ppc_cost_per_conversion_usd
+      - join_path: ppc_campaign_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: ppc_campaign_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend
+      - join_path: ppc_campaign_daily.dim_googleads_campaign
+        includes:
+          - campaign_name
+          - campaign_status
+          - channel_type
+      - join_path: ppc_campaign_daily.dim_currency
+        includes:
+          - usd_rate

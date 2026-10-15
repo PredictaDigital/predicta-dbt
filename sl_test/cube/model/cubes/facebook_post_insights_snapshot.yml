@@ -1,0 +1,111 @@
+cubes:
+  - name: facebook_post_insights_snapshot
+    sql_table: sl_test.fct_facebook__post_insights_snapshot
+    public: false
+    description: "Facebook post insights as lifetime totals at each snapshot day, one column per metric. Each snapshot restates the running total: use the latest snapshot per post, do not sum across days. Source cube: not queried directly, exposed through views."
+    joins:
+      - name: dim_project
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_project}.project_id"
+      - name: dim_connection
+        relationship: many_to_one
+        sql: "{CUBE}.connection_id = {dim_connection}.connection_id"
+      - name: dim_date
+        relationship: many_to_one
+        sql: "{CUBE}.date = {dim_date}.date"
+      - name: dim_facebook_post
+        relationship: many_to_one
+        sql: "{CUBE}.project_id = {dim_facebook_post}.project_id AND {CUBE}.post_key = {dim_facebook_post}.post_key"
+    dimensions:
+      - name: post_insights_key
+        sql: post_insights_key
+        type: string
+        description: "Surrogate key of the row (primary key)."
+        primary_key: true
+        public: false
+      - name: project_id
+        sql: project_id
+        type: string
+        description: "Project the data belongs to. Every query is filtered to the projects in the caller's token."
+      - name: customer_id
+        sql: customer_id
+        type: string
+        description: "Customer that owns the project. Every query is filtered to the caller's customer."
+      - name: connection_id
+        sql: connection_id
+        type: string
+        description: "Source connection that delivered the row."
+      - name: date
+        sql: date
+        type: time
+        description: "Business date of the measurement (UTC calendar day)."
+      - name: post_key
+        sql: toString(post_key)
+        type: string
+        description: "Key of the Facebook post. Join to dim_facebook_post."
+        public: false
+    measures:
+      - name: fb_post_media_view
+        type: sum
+        sql: post_media_view
+        description: "Times the post was viewed (lifetime)."
+      - name: fb_post_total_media_view_unique
+        type: sum
+        sql: post_total_media_view_unique
+        description: "People who viewed the post (lifetime)."
+      - name: fb_post_clicks
+        type: sum
+        sql: post_clicks
+        description: "Clicks on the post (lifetime)."
+      - name: fb_post_video_views
+        type: sum
+        sql: post_video_views
+        description: "Video views of the post (lifetime)."
+      - name: fb_post_video_views_unique
+        type: sum
+        sql: post_video_views_unique
+        description: "People who viewed the video (lifetime)."
+      - name: fb_post_video_complete_views_30s
+        type: sum
+        sql: post_video_complete_views_30s
+        description: "Video views of at least 30 seconds (lifetime)."
+      - name: fb_post_clicks_by_type
+        type: sum
+        sql: post_clicks_by_type
+        description: "Clicks of all types, summed (lifetime)."
+      - name: fb_post_activity_by_action_type
+        type: sum
+        sql: post_activity_by_action_type
+        description: "Shares, comments and other actions, summed (lifetime)."
+      - name: fb_post_reactions_by_type_total
+        type: sum
+        sql: post_reactions_by_type_total
+        description: "Reactions of all types, summed (lifetime)."
+    pre_aggregations:
+      - name: facebook_post_insights_snapshot_daily
+        measures:
+          - CUBE.fb_post_media_view
+          - CUBE.fb_post_total_media_view_unique
+          - CUBE.fb_post_clicks
+          - CUBE.fb_post_video_views
+          - CUBE.fb_post_video_views_unique
+          - CUBE.fb_post_video_complete_views_30s
+          - CUBE.fb_post_clicks_by_type
+          - CUBE.fb_post_activity_by_action_type
+          - CUBE.fb_post_reactions_by_type_total
+        dimensions:
+          - CUBE.project_id
+          - CUBE.customer_id
+        external: true
+        time_dimension: CUBE.date
+        granularity: day
+        partition_granularity: month
+        indexes:
+          - name: by_project
+            columns:
+              - CUBE.project_id
+              - CUBE.customer_id
+        refresh_key:
+          every: 1 hour
+          incremental: true
+          update_window: 7 day

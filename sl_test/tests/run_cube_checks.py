@@ -11,6 +11,7 @@ import base64
 import glob
 import json
 import os
+import re
 import sys
 import urllib.request
 
@@ -100,6 +101,8 @@ def c1_c2():
     n1 = n2 = 0
     for view, ms in public.items():
         for m in ms:
+            if view not in exp:
+                continue   # newer views: every measure is verified against ClickHouse by C10
             if m not in exp.get(view, {}):
                 uncovered.append(f"{view}.{m}")
                 continue
@@ -217,6 +220,52 @@ def c8():
            "Rollup use not testable here: the scratch Cube ran without rollups (Cube Store build fails on Windows). usedPreAggregations = none.")
 
 
+# ----------------------------------------------------------- C10 (every view measure vs ClickHouse)
+def c10():
+    """For each view: every public measure must equal the ClickHouse sum of its fact column; ratio measures must equal
+    the ratio of those sums. Reads the cube and view files to know which column each measure sums."""
+    cube_defs = {}
+    for f in glob.glob(os.path.join(MODEL, "cubes", "*.yml")):
+        for c in yaml.safe_load(open(f, encoding="utf-8"))["cubes"]:
+            cube_defs[c["name"]] = c
+    bad, n = [], 0
+    for f in glob.glob(os.path.join(MODEL, "views", "*.yml")):
+        v = yaml.safe_load(open(f, encoding="utf-8"))["views"][0]
+        root = v["cubes"][0]
+        cube = cube_defs[root["join_path"]]
+        ms = {m["name"]: m for m in cube.get("measures", [])}
+        wanted = [m for m in root["includes"] if m in ms]
+        if not wanted:
+            continue
+        table = cube["sql_table"]
+        sums = {}
+        for m in ms.values():
+            if m["type"] == "sum":
+                sums[m["name"]] = float(ch(f"select sum({m['sql']}) from {table} where project_id = '{P}'")[0][0] or 0)
+        def expected(name):
+            m = ms[name]
+            if m["type"] == "sum":
+                return sums[name]
+            a, b = re.findall(r"\{(\w+)\}", m["sql"])
+            return None if sums_or_calc(b) == 0 else sums_or_calc(a) / sums_or_calc(b)
+        def sums_or_calc(name):
+            m = ms[name]
+            return sums[name] if m["type"] == "sum" else expected(name)
+        st, got = one(wanted, v["name"])
+        if got is None:
+            bad.append((v["name"], f"query status {st}"))
+            continue
+        for name in wanted:
+            n += 1
+            e = expected(name)
+            if e is None:
+                continue
+            if not close(got[name], e, 1e-6):
+                bad.append((v["name"], name, e, got[name]))
+    record("C10", "Every public measure of every view equals its ClickHouse sum (ratios equal the ratio of sums)", f"{n} measures match",
+           "all match" if not bad else f"{len(bad)} differ, first {bad[:2]}", not bad)
+
+
 # ----------------------------------------------------------- R1 (rollup status)
 def r1():
     q = {"measures": ["seo_traffic.ga4_sessions"], "dimensions": ["seo_traffic.channel_group"]}   # served by the ga4_traffic_daily rollup
@@ -290,7 +339,7 @@ def c9():
 
 if __name__ == "__main__":
     GOOD = cc.token({"customer_id": C, "project_ids": [P]})
-    for f in (c1_c2, c3, c4, c5, c6, c7, c8, c9, r1):
+    for f in (c1_c2, c3, c4, c5, c6, c7, c8, c9, c10, r1):
         try:
             f()
         except Exception as e:

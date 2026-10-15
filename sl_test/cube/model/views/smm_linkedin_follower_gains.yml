@@ -1,0 +1,22 @@
+views:
+  - name: smm_linkedin_follower_gains
+    description: "LinkedIn page follower gains per day, organic and paid."
+    cubes:
+      - join_path: linkedin_follower_gains_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - li_organic_follower_gain
+          - li_paid_follower_gain
+      - join_path: linkedin_follower_gains_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: linkedin_follower_gains_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

@@ -1,0 +1,22 @@
+views:
+  - name: smm_instagram_reach
+    description: "Instagram accounts reached per day, split by follower and non-follower."
+    cubes:
+      - join_path: instagram_reach_by_follow_type_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - follow_type
+          - ig_reach
+      - join_path: instagram_reach_by_follow_type_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: instagram_reach_by_follow_type_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

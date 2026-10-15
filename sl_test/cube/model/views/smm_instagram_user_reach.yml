@@ -1,0 +1,23 @@
+views:
+  - name: smm_instagram_user_reach
+    description: "Instagram reach per day with the trailing 28-day and weekly reach reported that day."
+    cubes:
+      - join_path: instagram_user_reach_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - ig_reach
+          - ig_reach_days_28
+          - ig_reach_week
+      - join_path: instagram_user_reach_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: instagram_user_reach_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend

@@ -1,0 +1,22 @@
+views:
+  - name: smm_instagram_views
+    description: "Instagram views per day, split by media type."
+    cubes:
+      - join_path: instagram_views_by_media_type_daily
+        includes:
+          - project_id
+          - customer_id
+          - date
+          - connection_id
+          - media_product_type
+          - ig_views
+      - join_path: instagram_views_by_media_type_daily.dim_project
+        includes:
+          - project_name
+          - customer_name
+      - join_path: instagram_views_by_media_type_daily.dim_date
+        includes:
+          - week_start
+          - month_start
+          - day_name
+          - is_weekend
